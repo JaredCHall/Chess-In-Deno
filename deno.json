@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "chess/": "./src/"
+  },
+  "tasks": {
+    "dev": "deno run main.ts",
+    "test": "deno test tests"
+  },
+  "test": {
+    "include": ["tests/*Test.ts"]
+  }
+}
