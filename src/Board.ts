@@ -81,8 +81,11 @@ export class Board
 
     readonly pieceSet = new PieceSet()
 
+    fenNumber: FenNumber
+
     constructor(fenNumber: FenNumber|string = '8/8/8/8/8/8/8/8') {
-        this.setFromFen(new FenNumber(fenNumber))
+        this.fenNumber = new FenNumber(fenNumber)
+        this.setFromFen(this.fenNumber)
     }
 
     promotePiece(piece: Piece, promoteType: PromotionType)
