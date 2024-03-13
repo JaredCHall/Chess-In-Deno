@@ -1,4 +1,4 @@
-import {SquareSet} from "../src/SquareSet.ts";
+import {Board} from "../src/Board.ts";
 import {assertEquals, assertInstanceOf} from "https://deno.land/std@0.219.0/assert/mod.ts";
 import {Piece} from "../src/Piece.ts";
 import {Square} from "../src/Square.ts";
@@ -6,7 +6,7 @@ import {Square} from "../src/Square.ts";
 
 Deno.test('It sets board from FEN number', () => {
 
-    const squares = new SquareSet('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    const squares = new Board('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
 
     // black pieces
     assertEquals(squares.a8.getPiece(), Piece.fromString('r','a8'))
@@ -80,7 +80,7 @@ Deno.test('It serializes as FEN piece position string', () => {
 
     // New Game FEN
 
-    const squares = new SquareSet
+    const squares = new Board
     squares.a8.setPiece(Piece.fromString('r'))
     squares.b8.setPiece(Piece.fromString('n'))
     squares.c8.setPiece(Piece.fromString('b'))
@@ -117,7 +117,7 @@ Deno.test('It makes moves', () => {
 
     // New Game FEN
 
-    const squares = new SquareSet('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    const squares = new Board('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
     squares.makeMove(squares.getMove('e2','e4', 'double-pawn-move'))
     squares.makeMove(squares.getMove('a7','a5', 'double-pawn-move'))
     squares.makeMove(squares.getMove('g1','f3'))

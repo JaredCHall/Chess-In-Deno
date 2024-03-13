@@ -4,7 +4,7 @@
   },
   "tasks": {
     "dev": "deno run main.ts",
-    "test": "deno test tests"
+    "test": "deno test"
   },
   "test": {
     "include": ["tests/*Test.ts"]

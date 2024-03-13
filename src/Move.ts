@@ -1,6 +1,6 @@
 import {SquareName} from "./Square.ts";
 import {Piece} from "./Piece.ts";
-import {SquareSet} from "./SquareSet.ts";
+import {Board} from "./Board.ts";
 
 
 export type MoveType = 'simple' | 'double-pawn-move' | 'en-passant' | 'pawn-promotion' | 'king-side-castles' | 'queen-side-castles'
@@ -28,7 +28,7 @@ export class Move
         this.promoteType = promoteType
     }
 
-    movePieces(squares: SquareSet): void
+    movePieces(squares: Board): void
     {
         if(this.type === 'king-side-castles' || this.type === 'queen-side-castles'){
             return this.#makeCastlingMove(squares)
@@ -45,14 +45,14 @@ export class Move
         return this.#makeSimpleMove(squares, this.oldSquare, this.newSquare, this.captured instanceof Piece)
     }
 
-    #makeSimpleMove(squares: SquareSet, oldSquare: SquareName, newSquare: SquareName, isCapture: boolean = false)
+    #makeSimpleMove(squares: Board, oldSquare: SquareName, newSquare: SquareName, isCapture: boolean = false)
     {
         const moving = squares.getPiece(oldSquare)
         squares.setSquare(oldSquare, null)
         squares.setSquare(newSquare, moving, isCapture)
     }
 
-    #makeCastlingMove(squares: SquareSet): void
+    #makeCastlingMove(squares: Board): void
     {
         if(this.type === 'king-side-castles'){
             if(this.moving.color === 'w'){
@@ -76,7 +76,7 @@ export class Move
         throw new Error(`Unexpected castles-type`)
     }
 
-    #makeEnPassantMove(squares: SquareSet): void
+    #makeEnPassantMove(squares: Board): void
     {
         if(!this.captured?.square){
             throw new Error('Cannot make EnPassant Move. No captured piece provided')
