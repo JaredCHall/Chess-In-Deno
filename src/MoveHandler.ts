@@ -49,8 +49,13 @@ export class MoveHandler {
     }
 
     #restorePiece(piece: Piece, square: SquareName): void {
-        this.board.pieceMap.addPiece(piece)
-        this.board.setPiece(square, piece)
+        const originalPiece = this.board.pieceMap.captures[piece.color][piece.startSquare] ?? null
+        if(!originalPiece){
+            throw new Error(`Cannot restore piece: ${piece.serialize()}. Original piece does not exist in the capture map.`)
+        }
+        delete this.board.pieceMap.captures[piece.color][piece.startSquare]
+        this.board.pieceMap.addPiece(originalPiece)
+        this.board.setPiece(square, originalPiece)
     }
 
     #promotePiece(square: SquareName, promoteType: PromotionType): void {
