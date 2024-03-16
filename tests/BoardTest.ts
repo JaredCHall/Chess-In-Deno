@@ -5,8 +5,8 @@ import {Square, SquareName} from "../src/Square.ts";
 
 
 Deno.test('It sets board from FEN number', () => {
-
     const board = new Board('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    board.render()
 
     // black pieces
     assertEquals(board.getPiece('a8'), Piece.fromString('r','a8'))
@@ -54,5 +54,8 @@ Deno.test('It sets board from FEN number', () => {
         'e1/d1/a1h1/c1f1/b1g1/a2b2c2d2e2f2g2h2/e8/d8/a8h8/c8f8/b8g8/a7b7c7d7e7f7g7h7//'
     )
 
-    board.render()
+    assertEquals(
+        board.serialize(),
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'
+    )
 })
