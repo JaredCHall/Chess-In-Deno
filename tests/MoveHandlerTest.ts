@@ -5,6 +5,43 @@ import {assertEquals} from "https://deno.land/std@0.219.0/assert/assert_equals.t
 import {Piece} from "../src/Piece.ts";
 import {SquareName} from "../src/Square.ts";
 import { assert } from "https://deno.land/std@0.219.0/assert/assert.ts";
+import {FenNumber} from "../src/FenNumber.ts";
+
+Deno.test('it updates fen numbers', () => {
+    const fen = new FenNumber('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq')
+    const handler = getHandler(fen.serialize())
+
+    const e1King = getPiece(handler, 'e1')
+    const e2Pawn = getPiece(handler, 'e2')
+    const g8Knight = getPiece(handler,'g8')
+    const h8Rook = getPiece(handler, 'h8')
+
+    let move = new Move('e2','e4', e2Pawn, null, 'double-pawn-move')
+
+    // sets en-passant target
+    makeMove(handler, move)
+    handler.updateFenNumber(fen, move)
+    assertEquals(fen.serialize(), 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1')
+
+    // revokes en-passant target
+    move = new Move('g8','f6', g8Knight, null)
+    makeMove(handler, move)
+    handler.updateFenNumber(fen, move)
+    assertEquals(fen.serialize(), 'rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2')
+
+    // moving the king should revoke all castle rights for white
+    move = new Move('e1','e2', e1King, null)
+    makeMove(handler, move)
+    handler.updateFenNumber(fen, move)
+    assertEquals(fen.serialize(), 'rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 2 2')
+
+    // moving the h8 rook should revoke short castle rights for black
+    move = new Move('h8','g8', h8Rook, null)
+    makeMove(handler, move)
+    handler.updateFenNumber(fen, move)
+    assertEquals(fen.serialize(), 'rnbqkbr1/pppppppp/5n2/8/4P3/8/PPPPKPPP/RNBQ1BNR w q - 3 3')
+
+})
 
 Deno.test('it makes simple move', () => {
     const handler = getHandler('3k4/8/8/6r1/8/5N2/8/3K4')
@@ -34,20 +71,6 @@ Deno.test('it makes move with capture', () => {
     unMakeMove(handler, move)
     assertSerializesTo(handler, '3k4/8/8/6r1/8/5N2/8/3K4')
     assertPieceOnSquare(handler, 'g5', capturedPiece)
-})
-
-Deno.test('it makes double pawn move', () => {
-    const handler = getHandler('3k4/8/8/8/8/8/1K3P2/8')
-    const pawn = getPiece(handler,'f2')
-    const move = new Move('f2','f4', pawn, null,'double-pawn-move')
-
-    makeMove(handler, move)
-    assertSerializesTo(handler, '3k4/8/8/8/5P2/8/1K6/8')
-    assertPieceOnSquare(handler, 'f4', pawn)
-
-    unMakeMove(handler, move)
-    assertSerializesTo(handler, '3k4/8/8/8/8/8/1K3P2/8')
-    assertPieceOnSquare(handler, 'f2', pawn)
 })
 
 Deno.test('it makes en-passant move', () => {

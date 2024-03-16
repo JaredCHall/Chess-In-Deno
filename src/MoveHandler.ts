@@ -44,6 +44,28 @@ export class MoveHandler {
         }
     }
 
+    updateFenNumber(fenNumber: FenNumber, move: Move): void
+    {
+        fenNumber.piecePlacements = this.board.serialize()
+        this.#setEnPassantTarget(fenNumber, move)
+        this.#revokeCastleRights(fenNumber, move)
+
+        // update move clocks
+        if(move.moving.color === 'w'){
+            fenNumber.sideToMove = 'b'
+        }else{
+            fenNumber.sideToMove = 'w'
+            fenNumber.fullMoveCounter++
+        }
+
+        // handle the half-move clock
+        if(move.moving.type === 'p' || move.captured){
+            fenNumber.halfMoveClock = 0
+        }else{
+            fenNumber.halfMoveClock++
+        }
+    }
+
     #capturePiece(piece: Piece): void {
         this.board.pieceMap.removePiece(piece)
     }

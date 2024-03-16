@@ -27,7 +27,7 @@ export class FenNumber {
 
     isStalemate: boolean = false
 
-    constructor(fen: string | FenNumber) {
+    constructor(fen: string | FenNumber = '8/8/8/8/8/8/8/8') {
 
         if (fen instanceof FenNumber) {
             this.piecePlacements = fen.piecePlacements
@@ -91,6 +91,28 @@ export class FenNumber {
             default:
                 throw new Error(`Invalid CastleRight: ${castleRight}.`)
         }
+    }
+
+    serialize(withExtended: boolean = false): string
+    {
+        const commonParts = [
+            this.piecePlacements,
+            this.sideToMove,
+            this.castleRights.length > 0 ? this.castleRights.join('') : '-',
+            this.enPassantTarget ?? '-',
+            this.halfMoveClock,
+            this.fullMoveCounter
+        ]
+
+        if(!withExtended){
+            return commonParts.join(' ')
+        }
+
+        return commonParts.concat([
+            this.isCheck ? '1' : '0',
+            this.isMate ? '1' : '0',
+            this.isStalemate ? '1' : '0'
+        ]).join(' ')
     }
 
 }
