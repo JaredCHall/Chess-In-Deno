@@ -1,9 +1,9 @@
 import {SquareName} from "./Square.ts";
 import {Piece} from "./Piece.ts";
-import {Board} from "./Board.ts";
+import {CastleRight} from "./FenNumber.ts";
 
 
-export type MoveType = 'simple' | 'double-pawn-move' | 'en-passant' | 'pawn-promotion' | 'king-side-castles' | 'queen-side-castles'
+export type MoveType = 'simple' | 'double-pawn-move' | 'en-passant' | 'pawn-promotion' | 'castles'
 
 export class Move
 {
@@ -28,75 +28,43 @@ export class Move
         this.promoteType = promoteType
     }
 
-    movePieces(squares: Board): void
+    static castlesTypeByTargetSquare(square: SquareName): CastleRight
     {
-        if(this.type === 'king-side-castles' || this.type === 'queen-side-castles'){
-            return this.#makeCastlingMove(squares)
+        switch(square){
+            case 'g1': return 'K'
+            case 'c1': return 'Q'
+            case 'g8': return 'k'
+            case 'c8': return 'q'
+            default: throw new Error(`Invalid target square: ${square} for Castling Move.`)
         }
-
-        if(this.type === 'en-passant'){
-            return this.#makeEnPassantMove(squares)
-        }
-
-        if(this.type === 'pawn-promotion'){
-            squares.promotePiece(squares.getPiece(this.oldSquare),this.promoteType ?? 'q')
-        }
-
-        return this.#makeSimpleMove(squares, this.oldSquare, this.newSquare, this.captured instanceof Piece)
     }
 
-    #makeSimpleMove(squares: Board, oldSquare: SquareName, newSquare: SquareName, isCapture: boolean = false)
+    static castleTypeByRookStartSquare(square: SquareName): CastleRight
     {
-        const moving = squares.getPiece(oldSquare)
-        squares.setSquare(oldSquare, null)
-        squares.setSquare(newSquare, moving, isCapture)
-    }
-
-    #makeCastlingMove(squares: Board): void
-    {
-        if(this.type === 'king-side-castles'){
-            if(this.moving.color === 'w'){
-                this.#makeSimpleMove(squares, 'e1', 'g1')
-                this.#makeSimpleMove(squares, 'h1', 'f1')
-            }else{
-                this.#makeSimpleMove(squares, 'e8', 'g8')
-                this.#makeSimpleMove(squares, 'h8', 'f8')
-            }
-            return
-        }else if(this.type === 'queen-side-castles'){
-            if(this.moving.color === 'w'){
-                this.#makeSimpleMove(squares, 'e1', 'c1')
-                this.#makeSimpleMove(squares, 'a1', 'd1')
-            }else{
-                this.#makeSimpleMove(squares, 'e8', 'c8')
-                this.#makeSimpleMove(squares, 'a8', 'd8')
-            }
-            return
+        switch(square){
+            case 'a1': return 'Q'
+            case 'h1': return 'K'
+            case 'a8': return 'q'
+            case 'h8': return 'k'
+            default: throw new Error(`Invalid rook start square: ${square} for Castling Move.`)
         }
-        throw new Error(`Unexpected castles-type`)
     }
-
-    #makeEnPassantMove(squares: Board): void
-    {
-        if(!this.captured?.square){
-            throw new Error('Cannot make EnPassant Move. No captured piece provided')
-        }
-
-        this.#makeSimpleMove(squares, this.oldSquare, this.newSquare)
-        squares.setSquare(this.captured.square, null, true)
-    }
-
 
     serialize(): string
     {
-        switch(this.type){
-            case "king-side-castles":
-                return 'O-O'
-            case 'queen-side-castles':
-                return 'O-O-O'
-        }
-
         let serialized = this.oldSquare + this.newSquare
+        if(this.type === 'castles'){
+            switch(Move.castlesTypeByTargetSquare(this.newSquare)){
+                case 'K':
+                case 'k':
+                    serialized = 'O-O'
+                    break
+                case 'Q':
+                case 'q':
+                    serialized = 'O-O-O'
+                    break
+            }
+        }
 
         if(this.type === 'pawn-promotion'){
             serialized += '='+this.moving.type.toUpperCase()

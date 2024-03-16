@@ -71,6 +71,15 @@ export class Piece
         this.type = type
     }
 
+    demote(): void
+    {
+        if(this.type === 'p'){
+            throw new Error(`Cannot demote piece of type ${this.type}. Piece is already a pawn.`)
+        }
+
+        this.type = 'p'
+    }
+
     serialize(): PieceType
     {
         if(this.color === Player.BLACK){

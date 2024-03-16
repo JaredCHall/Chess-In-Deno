@@ -18,6 +18,28 @@ export type SquareFile = 'a'|'b'|'c'|'d'|'e'|'f'|'g'|'h'
 
 export class Square {
 
+    static readonly squaresOrder: SquareName[] = [
+        'a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8',
+        'a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7',
+        'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6',
+        'a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5',
+        'a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4',
+        'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3',
+        'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2',
+        'a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1',
+    ];
+
+    static readonly lightSquares: SquareName[] = [
+        'a8', 'c8', 'e8', 'g8', 'b7', 'd7', 'f7', 'h7',
+        'a6', 'c6', 'e6', 'g6', 'b5', 'd5', 'f5', 'h5',
+        'a4', 'c4', 'e4', 'g4', 'b3', 'd3', 'f3', 'h3',
+        'a2', 'c2', 'e2', 'g2', 'b1', 'd1', 'f1', 'h1',
+    ]
+
+    static readonly files: SquareFile[] = ['a','b','c','d','e','f','g','h']
+
+    static readonly ranks: SquareRank[] = [8,7,6,5,4,3,2,1]
+
     readonly name: SquareName
 
     readonly color: SquareColor
@@ -29,12 +51,11 @@ export class Square {
     piece: Piece|null  = null
 
 
-    constructor(file: SquareFile, rank: SquareRank, color: SquareColor) {
-
-        this.color = color
+    constructor(file: SquareFile, rank: SquareRank) {
         this.rank = rank
         this.file = file
-        this.name = Square.getSquareName(this.file, this.rank)
+        this.name = Square.getName(file, rank)
+        this.color = Square.lightSquares.includes(this.name) ? 'light' : 'dark'
     }
 
     setPiece(piece: Piece|null|string){
@@ -44,6 +65,9 @@ export class Square {
         }
 
         this.piece = piece
+        if(piece){
+            piece.square = this.name
+        }
     }
 
     hasPiece(): boolean
@@ -77,11 +101,16 @@ export class Square {
         }
     }
 
-    static getSquareName(file: SquareFile, rank: SquareRank): SquareName
+    static getName(file: SquareFile, rank: SquareRank): SquareName
     {
-        //@ts-ignore this is always valid
+        // @ts-ignore always valid
         return file + rank.toString()
     }
 
-
+    static fromString(name: string): Square
+    {
+        name = Square.sanitizeName(name)
+        // @ts-ignore always valid
+        return new Square(name.charAt(0), parseInt(name.charAt(1)))
+    }
 }

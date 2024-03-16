@@ -27,9 +27,9 @@ export class FenNumber {
 
     isStalemate: boolean = false
 
-    constructor(fen: string|FenNumber) {
+    constructor(fen: string | FenNumber) {
 
-        if(fen instanceof FenNumber){
+        if (fen instanceof FenNumber) {
             this.piecePlacements = fen.piecePlacements
             this.sideToMove = fen.sideToMove
             this.castleRights = fen.castleRights
@@ -51,21 +51,31 @@ export class FenNumber {
         this.isMate = (parts[7] ?? null) === '1'
         this.isStalemate = (parts[8] ?? null) === '1'
 
-        if(parts[2] && parts[2] !== '-'){
+        if (parts[2] && parts[2] !== '-') {
             this.castleRights = this.#sanitizeCastleRights(parts[2])
         }
 
-        if(parts[3] && parts[3] !== '-'){
+        if (parts[3] && parts[3] !== '-') {
             this.enPassantTarget = Square.sanitizeName(parts[3])
         }
 
-        if(parts[4] && parts[4] !== '-'){
+        if (parts[4] && parts[4] !== '-') {
             this.halfMoveClock = parseInt(parts[4])
         }
 
-        if(parts[5] && parts[5] !== '-'){
+        if (parts[5] && parts[5] !== '-') {
             this.fullMoveCounter = parseInt(parts[5])
         }
+    }
+
+    getCastleRightsForColor(color: PlayerColor): CastleRight[]
+    {
+        const typesForColor = color === 'w' ? ['K','Q'] : ['k','q']
+        return this.castleRights.filter(value => typesForColor.includes(value));
+    }
+
+    revokeCastleRights(rights: CastleRight[]){
+        this.castleRights = this.castleRights.filter((right: CastleRight) => !rights.includes(right))
     }
 
     #sanitizeCastleRights(castleRights: string): CastleRight[] {

@@ -1,241 +1,64 @@
-import {Square, SquareName} from "./Square.ts";
+import {Square, SquareName, SquareRank} from "./Square.ts";
 import {FenNumber} from "./FenNumber.ts";
 import {Piece, PromotionType} from "./Piece.ts";
-import {PieceSet} from "./PieceSet.ts";
-import { Move, MoveType } from "./Move.ts";
+import { PieceMap } from "./PieceMap.ts";
+import {PlayerColor} from "./Player.ts";
+import {
+    bgBlue,
+    bgBrightBlue,
+    bgBrightCyan,
+    bgBrightMagenta,
+    bgBrightYellow,
+    black,
+    bold,
+    dim,
+    white
+} from "https://deno.land/std@0.219.0/fmt/colors.ts";
 
+
+export type BoardSquares = Record<SquareName, Square>
+
+/**
+ * Board - Represents the state of the board
+ *
+ * Consists of 3 main properties:
+ * - squares: the 64 squares
+ * - fenNumber: represents piece positions and game state
+ * - pieceSet: an object providing quick reference to current piece positions (avoids searching every square for a piece)
+ *
+ */
 export class Board
 {
+    readonly squares: BoardSquares
 
-    readonly a8 = new Square('a', 8, 'light')
-    readonly b8 = new Square('b', 8, 'dark')
-    readonly c8 = new Square('c', 8, 'light')
-    readonly d8 = new Square('d', 8, 'dark')
-    readonly e8 = new Square('e', 8, 'light')
-    readonly f8 = new Square('f', 8, 'dark')
-    readonly g8 = new Square('g', 8, 'light')
-    readonly h8 = new Square('h', 8, 'dark')
-
-    readonly a7 = new Square('a', 7, 'dark')
-    readonly b7 = new Square('b', 7, 'light')
-    readonly c7 = new Square('c', 7, 'dark')
-    readonly d7 = new Square('d', 7, 'light')
-    readonly e7 = new Square('e', 7, 'dark')
-    readonly f7 = new Square('f', 7, 'light')
-    readonly g7 = new Square('g', 7, 'dark')
-    readonly h7 = new Square('h', 7, 'light')
-
-    readonly a6 = new Square('a', 6, 'light')
-    readonly b6 = new Square('b', 6, 'dark')
-    readonly c6 = new Square('c', 6, 'light')
-    readonly d6 = new Square('d', 6, 'dark')
-    readonly e6 = new Square('e', 6, 'light')
-    readonly f6 = new Square('f', 6, 'dark')
-    readonly g6 = new Square('g', 6, 'light')
-    readonly h6 = new Square('h', 6, 'dark')
-
-    readonly a5 = new Square('a', 5, 'dark')
-    readonly b5 = new Square('b', 5, 'light')
-    readonly c5 = new Square('c', 5, 'dark')
-    readonly d5 = new Square('d', 5, 'light')
-    readonly e5 = new Square('e', 5, 'dark')
-    readonly f5 = new Square('f', 5, 'light')
-    readonly g5 = new Square('g', 5, 'dark')
-    readonly h5 = new Square('h', 5, 'light')
-
-    readonly a4 = new Square('a', 4, 'light')
-    readonly b4 = new Square('b', 4, 'dark')
-    readonly c4 = new Square('c', 4, 'light')
-    readonly d4 = new Square('d', 4, 'dark')
-    readonly e4 = new Square('e', 4, 'light')
-    readonly f4 = new Square('f', 4, 'dark')
-    readonly g4 = new Square('g', 4, 'light')
-    readonly h4 = new Square('h', 4, 'dark')
-
-    readonly a3 = new Square('a', 3, 'dark')
-    readonly b3 = new Square('b', 3, 'light')
-    readonly c3 = new Square('c', 3, 'dark')
-    readonly d3 = new Square('d', 3, 'light')
-    readonly e3 = new Square('e', 3, 'dark')
-    readonly f3 = new Square('f', 3, 'light')
-    readonly g3 = new Square('g', 3, 'dark')
-    readonly h3 = new Square('h', 3, 'light')
-
-    readonly a2 = new Square('a', 2, 'light')
-    readonly b2 = new Square('b', 2, 'dark')
-    readonly c2 = new Square('c', 2, 'light')
-    readonly d2 = new Square('d', 2, 'dark')
-    readonly e2 = new Square('e', 2, 'light')
-    readonly f2 = new Square('f', 2, 'dark')
-    readonly g2 = new Square('g', 2, 'light')
-    readonly h2 = new Square('h', 2, 'dark')
-
-    readonly a1 = new Square('a', 1, 'dark')
-    readonly b1 = new Square('b', 1, 'light')
-    readonly c1 = new Square('c', 1, 'dark')
-    readonly d1 = new Square('d', 1, 'light')
-    readonly e1 = new Square('e', 1, 'dark')
-    readonly f1 = new Square('f', 1, 'light')
-    readonly g1 = new Square('g', 1, 'dark')
-    readonly h1 = new Square('h', 1, 'light')
-
-    readonly pieceSet = new PieceSet()
-
-    fenNumber: FenNumber
+    readonly pieceMap: PieceMap = new PieceMap()
 
     constructor(fenNumber: FenNumber|string = '8/8/8/8/8/8/8/8') {
-        this.fenNumber = new FenNumber(fenNumber)
-        this.setFromFen(this.fenNumber)
+
+        // build squares and set pieces from FenNumber
+        this.squares = this.#buildSquareSet()
+        this.#setPiecePositions(new FenNumber(fenNumber))
     }
 
-    promotePiece(piece: Piece, promoteType: PromotionType)
-    {
-        this.pieceSet.promotePiece(piece, promoteType)
+    getPiece(squareName: SquareName): Piece|null {
+        return this.squares[squareName].piece
     }
 
-    #getEnPassantMove(oldSquare: SquareName, newSquare: SquareName): Move
-    {
-        const capturedSquare = newSquare.charAt(0) + oldSquare.charAt(1)
-
-        // @ts-ignore - it will always be valid
-        const capturedPiece = this.getPiece(capturedSquare)
-
-        return new Move(
-            oldSquare,
-            newSquare,
-            this.getPiece(oldSquare),
-            capturedPiece,
-            'en-passant',
-        )
-    }
-
-    getMove(oldSquare: SquareName, newSquare: SquareName, moveType: MoveType = 'simple', promotionType: 'q'|'r'|'b'|'n'|null = null): Move
-    {
-        if(moveType === 'en-passant'){
-            return this.#getEnPassantMove(oldSquare, newSquare)
-        }
-
-        return new Move(
-            oldSquare,
-            newSquare,
-            this.getPiece(oldSquare),
-            this.hasPiece(newSquare) ? this.getPiece(newSquare) : null,
-            moveType,
-            promotionType
-        )
-    }
-
-    makeMove(move: Move)
-    {
-        move.movePieces(this)
-    }
-
-    getSquare(name: SquareName): Square
-    {
-        return this[name]
-    }
-
-    setStartingSquare(squareName: SquareName, piece: Piece|null)
-    {
-        this[squareName].setPiece(piece)
-        if(piece){
-            this.pieceSet.addPiece(piece)
-        }
-    }
-
-    getPieceList(color: 'w'|'b'|null = null, types: string[] = Piece.TYPES): Piece[]
-    {
-        return this.pieceSet.getPieces(color, types)
-    }
-
-    getPiece(squareName: SquareName): Piece
-    {
-        const piece = this[squareName].piece
-        if(!piece){
-            throw new Error(`Could not get piece. There is no piece on square: ${squareName}.`)
-        }
-        return piece
-    }
-
-    hasPiece(squareName: SquareName): boolean
-    {
-        return this[squareName].piece !== null
-    }
-
-    setSquare(squareName: SquareName, piece: Piece|null, isCapture: boolean = false)
-    {
-        const oldPiece = this[squareName].hasPiece() ? this[squareName].piece : null
-        this[squareName].setPiece(piece)
-        if(piece){
-            piece.square = squareName
-        }
-
-        if(isCapture){
-            if(!oldPiece){
-                throw new Error(`setSquare(${squareName},${piece?.serialize()},true) called with isCapture=true, but captured square does not have a piece.`)
-            }
-            this.pieceSet.removeCapturedPiece(oldPiece)
-        }
-    }
-
-
-    setFromFen(fenNumber: FenNumber)
-    {
-        this.pieceSet.flush()
-
-        const rows = fenNumber.piecePlacements.split('/').reverse()
-        if (rows.length !== 8) {
-            throw new Error('FEN piece placement must include all eight rows')
-        }
-
-        const columnNames = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-
-        const getSquareName = (columnNumber: number, row: number): SquareName => {
-            const colName  = columnNames[columnNumber - 1]
-            // @ts-ignore colName is always valid
-            return Square.getSquareName(colName, row)
-        }
-
-        for (let rowNumber = 8; rowNumber > 0; rowNumber--) {
-            const chars = rows[rowNumber - 1].split('')
-            let columnNumber = 1;
-            for (let i = 0; i < chars.length; i++) {
-                const character = chars[i]
-                if (/[1-8]/.test(character)) {
-                    const emptySpaces = parseInt(character)
-                    const lastEmptySpace = columnNumber + emptySpaces - 1
-                    while (columnNumber <= lastEmptySpace) {
-                        // set empty squares
-                        this.setStartingSquare(getSquareName(columnNumber, rowNumber), null)
-                        columnNumber++
-                    }
-                } else if (/[rbnqkpRBNQKP]/.test(character)) {
-                    // set square with piece
-                    const squareName = getSquareName(columnNumber, rowNumber)
-                    this.setStartingSquare(squareName, Piece.fromString(character,squareName))
-                    columnNumber++
-                } else {
-                    throw new Error("Unrecognized position character: " + character)
-                }
-            }
-        }
+    setPiece(square: SquareName, piece: Piece|null): void {
+        this.squares[square].setPiece(piece)
     }
 
     /**
      * Serializes as a FEN string
      */
-    serialize(): string
-    {
-        const columnNames = ['a','b','c','d','e','f','g','h']
+    serialize(): string {
+        const files = Square.files
         let emptySquares = 0
-
         let serialized = ''
         for(let row=8;row>=1;row--){
             for(let col =1; col<=8;col++){
-                const squareName = columnNames[col - 1] + row.toString()
-
                 // @ts-ignore these will always be valid square names
-                const piece = this.getSquare(squareName).piece
+                const piece = this.getPiece(files[col-1] + row.toString())
 
                 if(piece) {
                     if(emptySquares > 0){
@@ -259,4 +82,85 @@ export class Board
 
         return serialized
     }
+
+    render(): void {
+
+        console.log(dim(this.serialize()))
+
+        const squaresByRank: Record<SquareRank, Square[]> = {8: [], 7: [], 6: [], 5: [], 4: [], 3: [], 2: [], 1: []}
+        Object.values(this.squares).forEach((square: Square) => {
+            squaresByRank[square.rank].push(square)
+        });
+
+        const pieceMap = {
+            p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚',
+            P: '♙', N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔'
+        }
+
+        Square.ranks.forEach((rank: SquareRank) => {
+            const pieces = squaresByRank[rank].map((square: Square) => {
+                const piece = square.piece
+
+                let outVal = piece ? pieceMap[piece.type] + ' ' : '  '
+                outVal = square.color === 'light' ? bgBrightBlue(outVal) : bgBrightMagenta(outVal)
+                outVal = piece?.color === 'w' ? bold(white(outVal)) : bold(black(outVal))
+                return outVal
+            })
+
+
+            console.log(pieces.join(''))
+        })
+
+
+
+    }
+
+    #setPiecePositions(fenNumber: FenNumber) {
+        this.pieceMap.flush()
+
+        const files = Square.files
+        const rows = fenNumber.piecePlacements.split('/').reverse()
+        if (rows.length !== 8) {throw new Error('FEN piece placement must include all eight rows')}
+
+        const getSquareName = (columnNumber: number, row: number): SquareName => {
+            // @ts-ignore always valid
+            return files[columnNumber - 1] + row.toString()
+        }
+
+        for (let rowNumber = 8; rowNumber > 0; rowNumber--) {
+            const chars = rows[rowNumber - 1].split('')
+            let columnNumber = 1;
+            for (let i = 0; i < chars.length; i++) {
+                const character = chars[i]
+                if (/[1-8]/.test(character)) {
+                    const emptySpaces = parseInt(character)
+                    const lastEmptySpace = columnNumber + emptySpaces - 1
+                    while (columnNumber <= lastEmptySpace) {
+                        // set empty squares
+                        this.setPiece(getSquareName(columnNumber, rowNumber), null)
+                        columnNumber++
+                    }
+                } else if (/[rbnqkpRBNQKP]/.test(character)) {
+                    // set square with piece
+                    const squareName = getSquareName(columnNumber, rowNumber)
+                    const piece = Piece.fromString(character, squareName)
+                    this.setPiece(squareName, piece)
+                    this.pieceMap.addPiece(piece)
+                    columnNumber++
+                } else {
+                    throw new Error("Unrecognized position character: " + character)
+                }
+            }
+        }
+    }
+
+    #buildSquareSet(): BoardSquares {
+        const squares: Partial<BoardSquares> = {}
+        Square.squaresOrder.forEach((square: SquareName) => {
+            squares[square] = Square.fromString(square)
+        })
+        // @ts-ignore this is correct actually
+        return squares
+    }
+
 }

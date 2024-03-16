@@ -2,10 +2,10 @@ import {SquareName} from "./Square.ts";
 import {Piece} from "./Piece.ts";
 import {Board} from "./Board.ts";
 import {Move} from "./Move.ts";
-import {CastleRight} from "./FenNumber.ts";
+import {CastleRight, FenNumber} from "./FenNumber.ts";
 import {PlayerColor} from "./Player.ts";
 
-export class MoveFactory {
+export class MoveFactory extends Board{
 
     static readonly boardBoundary: (0|1)[] = [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -51,63 +51,47 @@ export class MoveFactory {
         return MoveFactory.squaresByIndex[index]
     }
 
-    readonly board: Board
 
-    constructor(board: Board) {
-        this.board = board
-    }
+    getPseudoLegalMoves(square: SquareName, fenNumber: FenNumber): Move[] {
 
-    getPseudoLegalMoves(square: SquareName): Move[] {
-
-        const piece = this.getOccupyingPiece(square)
+        const piece = this.getPiece(square)
         if(!piece){
             throw new Error(`Cannot get moves. No piece on square: ${square}`)
         }
 
         switch(piece.type){
-            case 'p': return this.getPawnMoves(square, piece, this.board.fenNumber.enPassantTarget)
+            case 'p': return this.getPawnMoves(square, piece, fenNumber.enPassantTarget)
             case 'r': return this.getRookMoves(square, piece)
             case 'n': return this.getKnightMoves(square, piece)
             case 'b': return this.getBishopMoves(square, piece)
             case 'q': return this.getQueenMoves(square, piece)
-            case 'k': return this.getKingMoves(square, piece, this.board.fenNumber.castleRights)
+            case 'k': return this.getKingMoves(square, piece, fenNumber.castleRights)
         }
-    }
-
-
-    getOccupyingPiece(squareName: SquareName): Piece|null
-    {
-        const square = this.board.getSquare(squareName)
-        return square.hasPiece() ? square.getPiece() : null
     }
 
     getRookMoves(square: SquareName, piece: Piece): Move[]
     {
-        const rayVectors = [
+        return this.traceRayVectors(square, piece, [
             [0,-1], // N
             [1,0],  // E
             [0,1],  // S
             [-1,0], // W
-        ]
-
-        return this.traceRayVectors(square, piece, rayVectors)
+        ])
     }
 
     getBishopMoves(square: SquareName, piece: Piece): Move[]
     {
-        const rayVectors = [
+        return this.traceRayVectors(square, piece, [
             [1,-1],  // NE
             [1,1],   // SE
             [-1,1],  // SW
             [-1,-1], // NW
-        ]
-
-        return this.traceRayVectors(square, piece, rayVectors)
+        ])
     }
 
     getQueenMoves(square: SquareName, piece: Piece): Move[]
     {
-        const rayVectors = [
+        return this.traceRayVectors(square, piece, [
             [0,-1],  // N
             [1,-1],  // NE
             [1,0],   // E
@@ -116,9 +100,7 @@ export class MoveFactory {
             [-1,1],  // SW
             [-1,0],  // W
             [-1,-1], // NW
-        ]
-
-        return this.traceRayVectors(square, piece, rayVectors)
+        ])
     }
 
     getKnightMoves(square: SquareName, piece: Piece): Move[]
@@ -143,7 +125,7 @@ export class MoveFactory {
             }
 
             const newSquare = MoveFactory.getSquareName(newIndex)
-            const occupyingPiece = this.getOccupyingPiece(newSquare)
+            const occupyingPiece = this.getPiece(newSquare)
 
             // occupied by a friendly piece
             if(occupyingPiece && occupyingPiece.color === piece.color){
@@ -158,7 +140,7 @@ export class MoveFactory {
 
     getKingMoves(square: SquareName, piece: Piece, castleRights: CastleRight[]): Move[]
     {
-        const rayVectors = [
+        const moves = this.traceRayVectors(square, piece, [
             [0,-1],  // N
             [1,-1],  // NE
             [1,0],   // E
@@ -167,8 +149,7 @@ export class MoveFactory {
             [-1,1],  // SW
             [-1,0],  // W
             [-1,-1], // NW
-        ]
-        const moves = this.traceRayVectors(square, piece, rayVectors, 1)
+        ], 1)
 
         // no castle rights, this is a full list of moves
         if(castleRights.length === 0){
@@ -176,27 +157,27 @@ export class MoveFactory {
         }
 
         const areSquaresEmpty = (squares: SquareName[]): boolean => {
-            return squares.every((square: SquareName) =>  !this.board.hasPiece(square))
+            return squares.every((square: SquareName) =>  !this.getPiece(square))
         }
         const isRookOnRequiredSquare = (square: SquareName, color: PlayerColor): boolean => {
-            const piece = this.getOccupyingPiece(square)
+            const piece = this.getPiece(square)
             return piece?.type === 'r' && piece?.color === color
         }
 
         // evaluate possible castling moves
         if(piece.color === 'w' && square === 'e1'){
             if(castleRights.indexOf('K') !== -1 && isRookOnRequiredSquare('h1', 'w') && areSquaresEmpty(['f1','g1'])){
-                moves.push(new Move('e1','g1',piece,null,'king-side-castles'))
+                moves.push(new Move('e1','g1',piece,null,'castles'))
             }
             if(castleRights.indexOf('Q') !== -1 && isRookOnRequiredSquare('a1', 'w') && areSquaresEmpty(['b1','c1','d1'])){
-                moves.push(new Move('e1','c1',piece,null,'queen-side-castles'))
+                moves.push(new Move('e1','c1',piece,null,'castles'))
             }
         }else if(piece.color === 'b' && square === 'e8'){
             if(castleRights.indexOf('k') !== -1 && isRookOnRequiredSquare('h8', 'b') && areSquaresEmpty(['f8','g8'])){
-                moves.push(new Move('e1','g8',piece,null,'king-side-castles'))
+                moves.push(new Move('e8','g8',piece,null,'castles'))
             }
             if(castleRights.indexOf('q') !== -1 && isRookOnRequiredSquare('a8', 'b') && areSquaresEmpty(['b8','c8','d8'])){
-                moves.push(new Move('e1','c8',piece,null,'queen-side-castles'))
+                moves.push(new Move('e8','c8',piece,null,'castles'))
             }
         }
 
@@ -212,7 +193,7 @@ export class MoveFactory {
         const captureOffsets = isPieceWhite ? [-11, -13] : [11,13] // NE,NW or SW,SE
 
         // determine if pawn is on starting square
-        const startingRank = this.board.getSquare(square).rank
+        const startingRank = this.squares[square].rank
         const isOnStartingRank = (isPieceWhite && startingRank == 2) || (!isPieceWhite && startingRank == 7)
         if(isOnStartingRank){
             moveOffsets.push(isPieceWhite ? -24 : 24) // N or S
@@ -226,7 +207,7 @@ export class MoveFactory {
                 break
             }
             const newSquare = MoveFactory.getSquareName(newIndex)
-            const occupyingPiece = this.getOccupyingPiece(newSquare)
+            const occupyingPiece = this.getPiece(newSquare)
             if(occupyingPiece){
                 break
             }
@@ -241,27 +222,25 @@ export class MoveFactory {
                 break
             }
             const newSquare = MoveFactory.getSquareName(newIndex)
-            const occupyingPiece = this.getOccupyingPiece(newSquare)
+            const occupyingPiece = this.getPiece(newSquare)
 
             if(occupyingPiece){
                 moves.push(new Move(square, newSquare, piece, occupyingPiece, 'simple'))
             }else if(newSquare === enPassantTarget) {
-                moves.push(new Move(square, newSquare, piece, this.getOccupyingPiece(enPassantTarget), 'en-passant'))
+                moves.push(new Move(square, newSquare, piece, this.getPiece(enPassantTarget), 'en-passant'))
             }
         }
 
         // test if pawn can promote
         moves.map((move: Move): Move => {
-            const newSquareRank = this.board.getSquare(move.newSquare).rank
+            const newSquareRank = this.squares[move.newSquare].rank
             if((move.moving.color === 'w' && newSquareRank === 8) || (move.moving.color === 'b' && newSquareRank === 1)){
                 return new Move(move.oldSquare, move.newSquare, move.moving, move.captured,'pawn-promotion','q')
             }
             return move
         })
         return moves
-
     }
-
 
     traceRayVectors(oldSquare: SquareName, piece: Piece, vectors: number[][], maxRayLength: number=7): Move[] {
 
@@ -278,7 +257,7 @@ export class MoveFactory {
                 }
 
                 const newSquare = MoveFactory.getSquareName(newIndex)
-                const occupyingPiece = this.getOccupyingPiece(newSquare)
+                const occupyingPiece = this.getPiece(newSquare)
 
                 // occupied by a friendly piece
                 if(occupyingPiece && occupyingPiece.color === piece.color){
@@ -294,6 +273,4 @@ export class MoveFactory {
         }
         return moves
     }
-
-
 }
