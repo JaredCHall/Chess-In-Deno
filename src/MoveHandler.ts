@@ -8,29 +8,22 @@ export class MoveHandler {
 
     readonly board: Board
 
-    readonly fenNumber: FenNumber|null
 
-    constructor(board: Board, fenNumber: FenNumber|null = null) {
+    constructor(board: Board) {
         this.board = board
-        this.fenNumber = fenNumber
     }
 
     makeMove(move: Move)
     {
         switch(move.type){
-            case 'castles': this.#makeCastlingMove(move); break;
-            case 'en-passant': this.#makeEnPassantMove(move); break;
-            case 'pawn-promotion':
-                this.#promotePiece(move.moving, move.promoteType ?? 'q')
-                /* falls through */
-            default:
-                this.#makeSimpleMove(move.oldSquare, move.newSquare, this.board.getPiece(move.newSquare))
+            case 'castles': return this.#makeCastlingMove(move); break;
+            case 'en-passant': return this.#makeEnPassantMove(move); break;
         }
 
-        if(this.fenNumber){
-            this.fenNumber.piecePlacements = this.board.serialize()
-            this.#revokeCastleRights(this.fenNumber, move)
-            this.#setEnPassantTarget(this.fenNumber, move)
+        this.#makeSimpleMove(move.oldSquare, move.newSquare, this.board.getPiece(move.newSquare))
+
+        if(move.type === 'pawn-promotion'){
+            this.#promotePiece(move.newSquare, move.promoteType ?? 'q')
         }
     }
 
@@ -39,20 +32,20 @@ export class MoveHandler {
         switch(move.type){
             case 'castles': return this.#unmakeCastlingMove(move)
             case 'en-passant': return this.#unmakeEnPassantMove(move)
-            case 'pawn-promotion': this.#demotePiece(move.moving)
         }
         this.#makeSimpleMove(move.newSquare, move.oldSquare)
 
         if(move.captured instanceof Piece){
             this.#restorePiece(move.captured, move.newSquare)
         }
+
+        if(move.type === 'pawn-promotion'){
+            this.#demotePiece(move.oldSquare)
+        }
     }
-
-
 
     #capturePiece(piece: Piece): void {
         this.board.pieceMap.removePiece(piece)
-        piece.square = null
     }
 
     #restorePiece(piece: Piece, square: SquareName): void {
@@ -60,12 +53,21 @@ export class MoveHandler {
         this.board.setPiece(square, piece)
     }
 
-    #promotePiece(piece: Piece, promoteType: PromotionType): void {
+    #promotePiece(square: SquareName, promoteType: PromotionType): void {
+        const piece = this.board.getPiece(square)
+        if(!piece){
+            throw new Error(`Cannot promote piece. No piece on square: ${square}`)
+        }
         piece.promote(promoteType)
         this.board.pieceMap.changePieceType('p', piece)
     }
 
-    #demotePiece(piece: Piece): void {
+    #demotePiece(square: SquareName): void {
+        const piece = this.board.getPiece(square)
+        if(!piece){
+            throw new Error(`Cannot promote piece. No piece on square: ${square}`)
+        }
+
         const oldType = piece.type
         piece.demote()
         this.board.pieceMap.changePieceType(oldType, piece)
@@ -112,16 +114,16 @@ export class MoveHandler {
                 this.#makeSimpleMove('f1', 'h1')
                 return
             case 'k':
-                this.#makeSimpleMove('e8', 'g8')
-                this.#makeSimpleMove('h8', 'f8')
+                this.#makeSimpleMove('g8', 'e8')
+                this.#makeSimpleMove('f8', 'h8')
                 return
             case 'Q':
                 this.#makeSimpleMove('c1', 'e1')
                 this.#makeSimpleMove('d1', 'a1')
                 return
             case 'q':
-                this.#makeSimpleMove('e8', 'c8')
-                this.#makeSimpleMove('a8', 'd8')
+                this.#makeSimpleMove('c8', 'e8')
+                this.#makeSimpleMove('d8', 'a8')
                 return
             default:
                 throw new Error(`Unexpected castles-type`)
