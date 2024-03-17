@@ -1,7 +1,8 @@
 import {Square, SquareName, SquareRank} from "./Square.ts";
-import {CastleRight, FenNumber} from "./FenNumber.ts";
+import {FenNumber} from "./FenNumber.ts";
 import {Piece} from "./Piece.ts";
 import { PieceMap } from "./PieceMap.ts";
+import { BoardState } from "./BoardState.ts";
 import {
     bgBrightBlue,
    bgBrightGreen,
@@ -11,7 +12,7 @@ import {
     dim,
     white
 } from "https://deno.land/std@0.219.0/fmt/colors.ts";
-import { BoardState } from "./BoardState.ts";
+
 
 
 export type BoardSquares = Record<SquareName, Square>
@@ -20,7 +21,6 @@ export type BoardSquares = Record<SquareName, Square>
 export type BoardPositions = Record<number, BoardState> // indexed by move ply
 /**
  * Board - Represents the state of the board
- *
  */
 export class Board
 {
@@ -44,6 +44,13 @@ export class Board
         this.boardState.ply = fenNumber.ply
     }
 
+    getPiece(squareName: SquareName): Piece|null {
+        return this.squares[squareName].piece
+    }
+
+    setPiece(square: SquareName, piece: Piece|null): void {
+        this.squares[square].setPiece(piece)
+    }
 
     saveCurrentState(): void
     {
@@ -55,14 +62,6 @@ export class Board
         const currentPly = this.boardState.ply
         this.boardState = this.positions[this.boardState.ply - 1]
         delete this.positions[currentPly]
-    }
-
-    getPiece(squareName: SquareName): Piece|null {
-        return this.squares[squareName].piece
-    }
-
-    setPiece(square: SquareName, piece: Piece|null): void {
-        this.squares[square].setPiece(piece)
     }
 
     /**

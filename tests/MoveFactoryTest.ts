@@ -61,7 +61,6 @@ Deno.test('it gets moves on open board', () => {
     assertGeneratesMoves('r3k2r/8/8/8/8/8/8/R3K2R w KQ', 'e1', ['c1','d1','d2','e2','f2','f1','g1'])
     // castles as black
     assertGeneratesMoves('r3k2r/8/8/8/8/8/8/R3K2R b kq', 'e8', ['c8','d8','d7','e7','f7','f8','g8'])
-
     // Queen Moves
     assertGeneratesMoves('3k4/8/8/4Q3/8/8/8/3K4', 'e5', [
         'e6','e7','e8', // N
@@ -75,6 +74,9 @@ Deno.test('it gets moves on open board', () => {
     ])
     // Pawn moves
     assertGeneratesMoves('3k4/8/8/4P3/8/8/8/3K4', 'e5', ['e6'])
+    assertGeneratesMoves('3k4/8/8/8/8/8/3P4/3K4', 'd2', ['d3','d4'])
+    const move = assertGeneratesMoves('3k4/5P2/8/8/8/8/8/3K4', 'f7', ['f8'])[0]
+    assertEquals(move.type === 'pawn-promotion', true)
 })
 
 Deno.test('it handles blocked moves and captures', () => {
@@ -98,6 +100,13 @@ Deno.test('it handles blocked moves and captures', () => {
     moves = assertGeneratesMoves('3k4/8/8/1P6/P1P5/PQP5/P1P5/1pK5', 'b3', ['b4','b2','b1'])
     assertHasCaptureOn(moves,'b1','p')
     // Pawn moves
+    // blocked pawn cannot move
+    assertGeneratesMoves('4k3/8/8/8/7p/p1p1p3/1P2P2P/4K3', 'e2', [])
+    // pawn double move blocked
+    assertGeneratesMoves('4k3/8/8/8/7p/p1p1p3/1P2P2P/4K3', 'h2', ['h3'])
+    // max range of motion for pawn
+    assertGeneratesMoves('4k3/8/8/8/7p/p1p1p3/1P2P2P/4K3', 'b2', ['a3','b3','b4','c3'])
+    // pawn promotions
     moves = assertGeneratesMoves('3k1ppp/6P1/8/8/8/8/8/2K5', 'g7', ['f8','h8'])
     assertHasCaptureOn(moves,'f8','p')
     assertHasCaptureOn(moves,'h8','p')
@@ -144,6 +153,8 @@ Deno.test('it forbids moving into and allows moving out of check', () => {
     assertGeneratesMoves('r2q1b1r/ppp1kppp/4bn2/1B1P2B1/8/4Q3/PPP2PPP/RN2K2R', 'e7', ['d6'])
     // king can move out of check with capture or regular move
     assertGeneratesMoves('r2q1b1r/1pp1kppp/p3bB2/1B1P4/8/4Q3/PPP2PPP/RN2K2R b KQ - 0 10', 'e7', ['d6','f6'])
+    // king calculates checks correctly with other king and pawn nearby
+    assertGeneratesMoves('5k2/5P2/4K3/8/8/8/8/8', 'f8', ['g7'])
 })
 
 
@@ -172,13 +183,4 @@ Deno.test('it generates all moves in a position', () => {
         'e7','e6','e5','f7','f6','f5','f4','f3','f2','f1',
         'g8','h8','g5','g4','g3','h6','h5','h3'
     ])
-})
-
-Deno.test('it generates perft 1', () => {
-
-    const fenNumber = new FenNumber('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-    const factory = getFactory(fenNumber)
-
-    console.log(factory.perft(4))
-
 })

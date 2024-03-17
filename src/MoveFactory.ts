@@ -78,6 +78,12 @@ export class MoveFactory extends Board{
 
     getLegalMoves(square: SquareName, promoteType: PromotionType|null = null): Move[] {
         return this.getPseudoLegalMoves(square, promoteType).filter((move: Move) => {
+
+            if(move.captured?.type === 'k'){
+                console.log(move)
+                throw new Error(`Cannot capture a king. Should never happen`)
+            }
+
             this.handler.makeMove(move)
             const isCheck = this.#isKingChecked(move.moving.color)
             this.handler.unMakeMove(move)
@@ -109,12 +115,6 @@ export class MoveFactory extends Board{
         return moveCount
     }
 
-    #isKingChecked(color: PlayerColor): boolean {
-        const square = this.pieceMap.getKing(color)?.square
-        if(!square){throw new Error(`Expected king on ${square}`)}
-        return this.#isSquareThreatenedBy(square,Player.oppositeColor(color))
-    }
-
     getPseudoLegalMoves(square: SquareName, promoteType: PromotionType|null = null): Move[] {
         const piece = this.getPiece(square)
         if(!piece){
@@ -131,7 +131,6 @@ export class MoveFactory extends Board{
         }
     }
 
-
     getRookMoves(square: SquareName, piece: Piece): Move[]
     {
         return this.traceRayVectors(square, piece, [
@@ -141,7 +140,6 @@ export class MoveFactory extends Board{
             [-1,0], // W
         ])
     }
-
     getBishopMoves(square: SquareName, piece: Piece): Move[]
     {
         return this.traceRayVectors(square, piece, [
@@ -384,9 +382,15 @@ export class MoveFactory extends Board{
             if(!isEnemyPieceAdjacent){return true}
             // only piece type left is the pawn, and
             // it can only capture if the king is in-front of the pawn's square
-            return !oldSquare.isAdvancedOf(newSquare, enemyColor)
+            return oldSquare.isAdvancedOf(newSquare, enemyColor)
         })
         return !isSquareSafe
+    }
+
+    #isKingChecked(color: PlayerColor): boolean {
+        const square = this.pieceMap.getKing(color)?.square
+        if(!square){throw new Error(`Expected king on ${square}`)}
+        return this.#isSquareThreatenedBy(square,Player.oppositeColor(color))
     }
 
 }

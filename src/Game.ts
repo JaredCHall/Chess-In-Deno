@@ -28,13 +28,13 @@ export class Game {
     // get legal moves for piece on selected square
     getMoves(square: SquareName): Move[]
     {
-        return this.moveFactory.getLegalMoves(square, this.fenNumber)
+        return this.moveFactory.getLegalMoves(square)
     }
 
     #getMoveFromNotation(notation: string, type: string): Move
     {
         switch(type){
-            case 'coordinate': this.moveFactory.makeFromCoordinateNotation(notation, this.fenNumber)
+            case 'coordinate': this.moveFactory.makeFromCoordinateNotation(notation)
         }
         throw new Error(`Unsupported move notation type: ${type}`)
     }
@@ -44,7 +44,6 @@ export class Game {
     {
         const move = this.#getMoveFromNotation(notation, this.notationType)
         this.moveHandler.makeMove(move)
-        this.moveHandler.updateFenNumber(this.fenNumber, move)
         // make move on factory as well, so it will be correct for next move
         this.moveFactory.handler.makeMove(move)
     }
