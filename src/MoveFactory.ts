@@ -278,7 +278,7 @@ export class MoveFactory extends Board{
         const isPieceWhite = piece.color == 'w'
 
         const moveOffsets = isPieceWhite ? [-12] : [12] // N or S
-        const captureOffsets = isPieceWhite ? [-11, -13] : [11,13] // NE,NW or SW,SE
+        const captureOffsets = isPieceWhite ? [-11, -13] : [11, 13] // NE,NW or SW,SE
 
         // determine if pawn is on starting square
         const startingRank = this.squares[square].rank
@@ -307,7 +307,7 @@ export class MoveFactory extends Board{
             const offset = captureOffsets[i]
             const newIndex = MoveFactory.getIndex(square) + offset
             if(MoveFactory.isIndexOutOfBounds(newIndex)){
-                break
+                continue
             }
             const newSquare = MoveFactory.getSquareName(newIndex)
             const occupyingPiece = this.getPiece(newSquare)

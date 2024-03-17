@@ -117,6 +117,8 @@ Deno.test('it handles blocked moves and captures', () => {
     // en-passant as black
     moves = assertGeneratesMoves('3k4/8/p7/Pp6/6Pp/7P/8/2K5 w - g3 0 1', 'h4', ['g3'])
     assertEquals(moves.every((move) =>  move.type === 'en-passant'), true)
+    // en-passant on board's edge
+    assertGeneratesMoves('4k3/8/8/pPpPpPpP/pPpPpPpP/8/8/4K3 w - g6', 'h5', ['g6','h6'])
 })
 
 Deno.test('it handles illegal castles', () => {
@@ -159,9 +161,19 @@ Deno.test('it forbids moving into and allows moving out of check', () => {
 
 Deno.test('it marks checking moves as checks', () => {
     const moves = assertGeneratesMoves('rnbqkbnr/pppp1ppp/8/4p3/5P2/5N2/PPPPP1PP/RNBQKB1R', 'd8', ['e7','f6','g5','h4'])
-    console.log(moves)
+    const move = moves.filter((move) => move.newSquare === 'h4')[0]
+    assertEquals(move.isCheck, true)
 })
 
+Deno.test('it marks mating move as mate', () => {
+    const moves = assertGeneratesMoves('rnbqkbnr/pppp1ppp/4p3/8/6P1/5P2/PPPPP2P/RNBQKBNR', 'd8', ['e7','f6','g5','h4'])
+    const move = moves.filter((move) => move.newSquare === 'h4')[0]
+    assertEquals(move.isMate, true)
+})
+
+Deno.test('it finds all en-passant moves', () => {
+    const moves = assertGeneratesMoves('4k3/8/8/pPpPpPpP/pPpPpPpP/8/8/4K3 w - g6', 'h5', ['g6','h6'])
+})
 
 Deno.test('it generates all moves in a position', () => {
 

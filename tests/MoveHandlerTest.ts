@@ -37,7 +37,7 @@ Deno.test('it makes move with capture', () => {
     assertPieceOnSquare(handler, 'g5', capturedPiece)
 })
 
-Deno.test('it makes en-passant move', () => {
+Deno.test('it makes en-passant moves', () => {
     const handler = getHandler('3k4/8/8/8/1pP5/8/1K6/8')
     const blackPawn = getPiece(handler,'b4')
     const whitePawn = getPiece(handler,'c4')

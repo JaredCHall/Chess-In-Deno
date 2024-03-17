@@ -15,32 +15,31 @@ export class MoveHandler {
     makeMove(move: Move)
     {
         switch(move.type){
-            case 'castles': return this.#makeCastlingMove(move); break;
-            case 'en-passant': return this.#makeEnPassantMove(move); break;
-        }
+            case 'castles': this.#makeCastlingMove(move); break;
+            case 'en-passant': this.#makeEnPassantMove(move); break;
+            default:
+                this.#makeSimpleMove(move.oldSquare, move.newSquare, this.board.getPiece(move.newSquare))
 
-        this.#makeSimpleMove(move.oldSquare, move.newSquare, this.board.getPiece(move.newSquare))
+        }
 
         if(move.type === 'pawn-promotion'){
             this.#promotePiece(move.newSquare, move.promoteType ?? 'q')
         }
-
-        // save the existing board state for use in unMakes
+        // save and update the existing board state for use in unMakes
         this.board.saveCurrentState()
-        // update current board state
         this.board.boardState.update(move)
     }
 
     unMakeMove(move: Move)
     {
         switch(move.type){
-            case 'castles': return this.#unmakeCastlingMove(move)
-            case 'en-passant': return this.#unmakeEnPassantMove(move)
-        }
-        this.#makeSimpleMove(move.newSquare, move.oldSquare)
-
-        if(move.captured instanceof Piece){
-            this.#restorePiece(move.captured, move.newSquare)
+            case 'castles': this.#unmakeCastlingMove(move); break;
+            case 'en-passant': this.#unmakeEnPassantMove(move); break;
+            default:
+                this.#makeSimpleMove(move.newSquare, move.oldSquare)
+                if(move.captured instanceof Piece){
+                    this.#restorePiece(move.captured, move.newSquare)
+                }
         }
 
         if(move.type === 'pawn-promotion'){

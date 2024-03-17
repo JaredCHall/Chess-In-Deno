@@ -5,7 +5,7 @@ import { PieceMap } from "./PieceMap.ts";
 import { BoardState } from "./BoardState.ts";
 import {
     bgBrightBlue,
-   bgBrightGreen,
+    bgBrightGreen,
     bgBrightMagenta,
     black,
     bold,
@@ -13,11 +13,7 @@ import {
     white
 } from "https://deno.land/std@0.219.0/fmt/colors.ts";
 
-
-
 export type BoardSquares = Record<SquareName, Square>
-
-
 export type BoardPositions = Record<number, BoardState> // indexed by move ply
 /**
  * Board - Represents the state of the board
