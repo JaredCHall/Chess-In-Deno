@@ -19,7 +19,7 @@ export class Piece
 
     type: PieceType
 
-    square: SquareName|null // name of currently occupied square, null if piece is captured
+    square: SquareName // name of currently occupied square, last occupied if captured
 
     readonly startSquare: SquareName // name of starting square
 
@@ -55,6 +55,19 @@ export class Piece
                 return type
             default:
                 throw new Error(`Invalid piece type: '${type}'.`)
+        }
+    }
+
+    static sanitizePromoteType(promoteType: string): PromotionType
+    {
+        switch(promoteType){
+            case 'n':
+            case 'b':
+            case 'r':
+            case 'q':
+                return promoteType
+            default:
+                throw new Error(`Invalid promotion type: '${promoteType}'.`)
         }
     }
 

@@ -1,8 +1,7 @@
 import {Board} from "./Board.ts";
 import {Move} from "./Move.ts";
 import {Piece, PromotionType} from "./Piece.ts";
-import {FenNumber} from "./FenNumber.ts";
-import {Square, SquareName} from "./Square.ts";
+import {SquareName} from "./Square.ts";
 
 export class MoveHandler {
 
@@ -25,6 +24,11 @@ export class MoveHandler {
         if(move.type === 'pawn-promotion'){
             this.#promotePiece(move.newSquare, move.promoteType ?? 'q')
         }
+
+        // save the existing board state for use in unMakes
+        this.board.saveCurrentState()
+        // update current board state
+        this.board.boardState.update(move)
     }
 
     unMakeMove(move: Move)
@@ -42,28 +46,8 @@ export class MoveHandler {
         if(move.type === 'pawn-promotion'){
             this.#demotePiece(move.oldSquare)
         }
-    }
 
-    updateFenNumber(fenNumber: FenNumber, move: Move): void
-    {
-        fenNumber.piecePlacements = this.board.serialize()
-        this.#setEnPassantTarget(fenNumber, move)
-        this.#revokeCastleRights(fenNumber, move)
-
-        // update move clocks
-        if(move.moving.color === 'w'){
-            fenNumber.sideToMove = 'b'
-        }else{
-            fenNumber.sideToMove = 'w'
-            fenNumber.fullMoveCounter++
-        }
-
-        // handle the half-move clock
-        if(move.moving.type === 'p' || move.captured){
-            fenNumber.halfMoveClock = 0
-        }else{
-            fenNumber.halfMoveClock++
-        }
+        this.board.restoreLastState()
     }
 
     #capturePiece(piece: Piece): void {
@@ -178,38 +162,5 @@ export class MoveHandler {
 
         this.#makeSimpleMove(move.newSquare, move.oldSquare)
         this.#restorePiece(move.captured, move.captured.square)
-    }
-
-    // Methods for updating FenNumber
-
-    #setEnPassantTarget(fenNumber: FenNumber,move: Move)
-    {
-        if(move.type !== 'double-pawn-move'){
-            fenNumber.enPassantTarget = null
-            return
-        }
-
-        const square = Square.fromString(move.newSquare)
-        fenNumber.enPassantTarget = Square.sanitizeName(square.file + (square.rank === 4 ? '3' : '6'))
-    }
-
-    #revokeCastleRights(fenNumber: FenNumber, move: Move)
-    {
-        const currentCastleRights = fenNumber.getCastleRightsForColor(move.moving.color)
-
-        if(currentCastleRights.length === 0){
-            return
-        }
-
-        if(move.moving.type === 'r'){
-            const type = Move.castleTypeByRookStartSquare(move.moving.startSquare)
-            if(currentCastleRights.includes(type)){
-                fenNumber.revokeCastleRights([type])
-            }
-            return
-        }
-        if(move.moving.type === 'k'){
-            fenNumber.revokeCastleRights(currentCastleRights)
-        }
     }
 }

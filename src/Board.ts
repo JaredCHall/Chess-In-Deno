@@ -1,30 +1,25 @@
 import {Square, SquareName, SquareRank} from "./Square.ts";
-import {FenNumber} from "./FenNumber.ts";
-import {Piece, PromotionType} from "./Piece.ts";
+import {CastleRight, FenNumber} from "./FenNumber.ts";
+import {Piece} from "./Piece.ts";
 import { PieceMap } from "./PieceMap.ts";
-import {PlayerColor} from "./Player.ts";
 import {
-    bgBlue,
     bgBrightBlue,
-    bgBrightCyan, bgBrightGreen,
+   bgBrightGreen,
     bgBrightMagenta,
-    bgBrightYellow, bgRed, bgYellow,
     black,
     bold,
     dim,
     white
 } from "https://deno.land/std@0.219.0/fmt/colors.ts";
+import { BoardState } from "./BoardState.ts";
 
 
 export type BoardSquares = Record<SquareName, Square>
 
+
+export type BoardPositions = Record<number, BoardState> // indexed by move ply
 /**
  * Board - Represents the state of the board
- *
- * Consists of 3 main properties:
- * - squares: the 64 squares
- * - fenNumber: represents piece positions and game state
- * - pieceSet: an object providing quick reference to current piece positions (avoids searching every square for a piece)
  *
  */
 export class Board
@@ -33,11 +28,33 @@ export class Board
 
     readonly pieceMap: PieceMap = new PieceMap()
 
+    readonly positions: BoardPositions = {}
+
+    boardState: BoardState = new BoardState() // current board state
+
     constructor(fenNumber: FenNumber|string = '8/8/8/8/8/8/8/8') {
 
+        fenNumber = new FenNumber(fenNumber)
         // build squares and set pieces from FenNumber
         this.squares = this.#buildSquareSet()
-        this.#setPiecePositions(new FenNumber(fenNumber))
+        this.#setPiecePositions(fenNumber)
+        this.boardState.castleRights = fenNumber.castleRights
+        this.boardState.enPassantTarget = fenNumber.enPassantTarget
+        this.boardState.halfMoveClock = fenNumber.halfMoveClock
+        this.boardState.ply = fenNumber.ply
+    }
+
+
+    saveCurrentState(): void
+    {
+        this.positions[this.boardState.ply] = this.boardState.clone()
+    }
+
+    restoreLastState(): void
+    {
+        const currentPly = this.boardState.ply
+        this.boardState = this.positions[this.boardState.ply - 1]
+        delete this.positions[currentPly]
     }
 
     getPiece(squareName: SquareName): Piece|null {

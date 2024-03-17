@@ -68,6 +68,11 @@ export class FenNumber {
         }
     }
 
+    get ply(): number
+    {
+        return (this.fullMoveCounter - 1) * 2 + (this.sideToMove === 'b' ? 1 : 0)
+    }
+
     getCastleRightsForColor(color: PlayerColor): CastleRight[]
     {
         const typesForColor = color === 'w' ? ['K','Q'] : ['k','q']

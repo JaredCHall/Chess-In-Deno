@@ -1,5 +1,5 @@
 import {Square, SquareName} from "./Square.ts";
-import {Piece} from "./Piece.ts";
+import {Piece, PromotionType} from "./Piece.ts";
 import {Board} from "./Board.ts";
 import {Move} from "./Move.ts";
 import {CastleRight, FenNumber} from "./FenNumber.ts";
@@ -59,13 +59,54 @@ export class MoveFactory extends Board{
         this.handler = new MoveHandler(this)
     }
 
-    getLegalMoves(square: SquareName, fenNumber: FenNumber): Move[] {
-        return this.getPseudoLegalMoves(square, fenNumber).filter((move: Move) => {
+    makeFromCoordinateNotation(userInput: string): Move
+    {
+        const parts = userInput.match(/^([a-h][1-8])(\s)?([a-h][1-8])(\s)?(=)?([QBNR])?$/)
+        if(parts === null){
+            throw new Error(`Unreadable Coordinate notation: ${userInput}`)
+        }
+        const oldSquare = Square.sanitizeName(parts[1])
+        const newSquare = Square.sanitizeName(parts[3])
+        const promoteType = parts[6] ? Piece.sanitizePromoteType(parts[6]) : null
+
+        const moves = this.getLegalMoves(oldSquare, promoteType).filter((move) => move.newSquare === newSquare)
+        if(moves.length !== 1){
+            throw new Error(`Illegal move: ${userInput}`)
+        }
+        return moves[0]
+    }
+
+    getLegalMoves(square: SquareName, promoteType: PromotionType|null = null): Move[] {
+        return this.getPseudoLegalMoves(square, promoteType).filter((move: Move) => {
             this.handler.makeMove(move)
             const isCheck = this.#isKingChecked(move.moving.color)
             this.handler.unMakeMove(move)
             return !isCheck
-        }, fenNumber);
+        });
+    }
+
+    getAllLegalMoves(): Move[] {
+        let moves: Move[] = []
+        this.pieceMap.getPieceList(this.boardState.sideToMove).forEach((piece: Piece) => {
+            moves = moves.concat(this.getLegalMoves(piece.square))
+        })
+        return moves
+    }
+
+    perft(depth: number): number
+    {
+        let moveCount = 0
+        if(depth === 0){
+            return 1
+        }
+        const n_moves = this.getAllLegalMoves()
+        n_moves.forEach((move: Move) => {
+            this.handler.makeMove(move)
+            moveCount += this.perft(depth -1)
+            this.handler.unMakeMove(move)
+        })
+
+        return moveCount
     }
 
     #isKingChecked(color: PlayerColor): boolean {
@@ -74,19 +115,19 @@ export class MoveFactory extends Board{
         return this.#isSquareThreatenedBy(square,Player.oppositeColor(color))
     }
 
-    getPseudoLegalMoves(square: SquareName, fenNumber: FenNumber): Move[] {
+    getPseudoLegalMoves(square: SquareName, promoteType: PromotionType|null = null): Move[] {
         const piece = this.getPiece(square)
         if(!piece){
             throw new Error(`Cannot get moves. No piece on square: ${square}`)
         }
 
         switch(piece.type){
-            case 'p': return this.getPawnMoves(square, piece, fenNumber.enPassantTarget)
+            case 'p': return this.getPawnMoves(square, piece, promoteType)
             case 'r': return this.getRookMoves(square, piece)
             case 'n': return this.getKnightMoves(square, piece)
             case 'b': return this.getBishopMoves(square, piece)
             case 'q': return this.getQueenMoves(square, piece)
-            case 'k': return this.getKingMoves(square, piece, fenNumber.castleRights)
+            case 'k': return this.getKingMoves(square, piece)
         }
     }
 
@@ -160,7 +201,7 @@ export class MoveFactory extends Board{
         return moves
     }
 
-    getKingMoves(square: SquareName, piece: Piece, castleRights: CastleRight[]): Move[]
+    getKingMoves(square: SquareName, piece: Piece): Move[]
     {
         const moves = this.traceRayVectors(square, piece, [
             [0,-1],  // N
@@ -174,6 +215,7 @@ export class MoveFactory extends Board{
         ], 1)
 
         // no castle rights, this is a full list of moves
+        const castleRights = this.boardState.getCastleRightsForColor(piece.color)
         if(castleRights.length === 0){
             return moves
         }
@@ -215,8 +257,11 @@ export class MoveFactory extends Board{
         return moves
     }
 
-    getPawnMoves(square: SquareName, piece: Piece, enPassantTarget: null|SquareName)
+    getPawnMoves(square: SquareName, piece: Piece, promoteType: PromotionType|null = null)
     {
+
+        const enPassantTarget = this.boardState.enPassantTarget
+
         const moves = []
         const isPieceWhite = piece.color == 'w'
 
@@ -255,12 +300,11 @@ export class MoveFactory extends Board{
             const newSquare = MoveFactory.getSquareName(newIndex)
             const occupyingPiece = this.getPiece(newSquare)
 
-            if(occupyingPiece){
+            if(occupyingPiece && occupyingPiece.color !== piece.color){
                 moves.push(new Move(square, newSquare, piece, occupyingPiece, 'simple'))
             }else if(newSquare === enPassantTarget) {
                 const captureSquare = Square.getSquareBehind(newSquare, piece.color)
                 const capturePiece = this.getPiece(captureSquare)
-                console.log(captureSquare)
                 if(capturePiece){
                     moves.push(new Move(square, newSquare, piece, capturePiece, 'en-passant'))
                 }
@@ -271,7 +315,7 @@ export class MoveFactory extends Board{
         return moves.map((move: Move): Move => {
             const newSquareRank = this.squares[move.newSquare].rank
             if((move.moving.color === 'w' && newSquareRank === 8) || (move.moving.color === 'b' && newSquareRank === 1)){
-                return new Move(move.oldSquare, move.newSquare, move.moving, move.captured,'pawn-promotion','q')
+                return new Move(move.oldSquare, move.newSquare, move.moving, move.captured,'pawn-promotion',promoteType ?? 'q')
             }
             return move
         })

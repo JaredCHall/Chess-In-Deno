@@ -11,18 +11,19 @@ const getFactory = (fen: string|FenNumber) => {
 }
 
 const assertTargetSquaresEqual = (moves: Move[], expected: SquareName[]) => {
-    assertArrayIncludes(moveToTargetSquareNames(moves), expected, `Move list includes expected squares`)
-    assertEquals(moves.length, expected.length, 'Move list contains only expected squares')
+    const flattenedMoves = moveToTargetSquareNames(moves)
+    assertArrayIncludes(flattenedMoves, expected, `Move list includes expected squares`)
+    assertEquals(flattenedMoves.length, expected.length, 'Move list contains only expected squares')
 }
 
 const moveToTargetSquareNames = (moves: Move[]): SquareName[] => {
-    return moves.map((move: Move) => move.newSquare)
+    return moves.map((move: Move) => move.newSquare).filter((v,i,a)=>a.indexOf(v)==i)
 }
 
 const assertGeneratesMoves = (fen: string, square: SquareName, expected: SquareName[]): Move[] => {
     const fenNumber = new FenNumber(fen)
     const factory = getFactory(fenNumber)
-    const moves = factory.getLegalMoves(square, fenNumber)
+    const moves = factory.getLegalMoves(square)
     factory.render(moveToTargetSquareNames(moves))
     assertTargetSquaresEqual(moves,expected)
     return moves
@@ -143,4 +144,41 @@ Deno.test('it forbids moving into and allows moving out of check', () => {
     assertGeneratesMoves('r2q1b1r/ppp1kppp/4bn2/1B1P2B1/8/4Q3/PPP2PPP/RN2K2R', 'e7', ['d6'])
     // king can move out of check with capture or regular move
     assertGeneratesMoves('r2q1b1r/1pp1kppp/p3bB2/1B1P4/8/4Q3/PPP2PPP/RN2K2R b KQ - 0 10', 'e7', ['d6','f6'])
+})
+
+
+
+Deno.test('it generates all moves in a position', () => {
+
+    // all moves for white
+    let fen = new FenNumber('2b1rr2/6kp/1R6/1p6/4n3/2N4P/PPP1B1P1/2K4R w - - 0 24')
+    let factory = getFactory(fen)
+    let moves = factory.getAllLegalMoves()
+    factory.render(moveToTargetSquareNames(moves))
+    assertTargetSquaresEqual(moves,[
+        'b8','b7','a6','c6','d6','e6','f6','g6','h6',
+        'b5','d5','h5','a4','b4','c4','e4','g4','h4',
+        'a3','b3','d3','f3','g3','h2',
+        'b1','d1','e1','f1','g1',
+    ])
+
+    // all moves for black
+    fen = new FenNumber('2b1rr2/6kp/1R6/1p6/4n3/2N4P/PPP1B1P1/2K4R b - - 0 24')
+    factory = getFactory(fen)
+    moves = factory.getAllLegalMoves()
+    factory.render(moveToTargetSquareNames(moves))
+    assertTargetSquaresEqual(moves,[
+        'd8','b7','b4','c5','c3','d2','d6','d7','d8',
+        'e7','e6','e5','f7','f6','f5','f4','f3','f2','f1',
+        'g8','h8','g5','g4','g3','h6','h5','h3'
+    ])
+})
+
+Deno.test('it generates perft 1', () => {
+
+    const fenNumber = new FenNumber('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    const factory = getFactory(fenNumber)
+
+    console.log(factory.perft(4))
+
 })
