@@ -19,11 +19,15 @@ export class Move
 
     readonly promoteType: 'b'|'q'|'n'|'r'|null
 
+    isCheck: boolean = false
+
+    isMate: boolean = false
+
     constructor(oldSquare: SquareName, newSquare: SquareName, moving: Piece, captured: Piece|null, type: MoveType = 'simple', promoteType: 'b'|'q'|'n'|'r'|null = null) {
         this.oldSquare = oldSquare
         this.newSquare = newSquare
-        this.moving = moving.clone()
-        this.captured = captured?.clone() ?? null
+        this.moving = moving
+        this.captured = captured ?? null
         this.type = type
         this.promoteType = promoteType
     }

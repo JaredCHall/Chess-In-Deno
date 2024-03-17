@@ -157,6 +157,10 @@ Deno.test('it forbids moving into and allows moving out of check', () => {
     assertGeneratesMoves('5k2/5P2/4K3/8/8/8/8/8', 'f8', ['g7'])
 })
 
+Deno.test('it marks checking moves as checks', () => {
+    const moves = assertGeneratesMoves('rnbqkbnr/pppp1ppp/8/4p3/5P2/5N2/PPPPP1PP/RNBQKB1R', 'd8', ['e7','f6','g5','h4'])
+    console.log(moves)
+})
 
 
 Deno.test('it generates all moves in a position', () => {

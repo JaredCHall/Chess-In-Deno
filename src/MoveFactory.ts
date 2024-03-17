@@ -54,6 +54,11 @@ export class MoveFactory extends Board{
 
     readonly handler: MoveHandler
 
+    readonly config = {
+        determineChecks: true,
+        determineMates: true,
+    }
+
     constructor(fenString: FenNumber) {
         super(fenString);
         this.handler = new MoveHandler(this)
@@ -84,16 +89,25 @@ export class MoveFactory extends Board{
                 throw new Error(`Cannot capture a king. Should never happen`)
             }
 
+            const movingColor = move.moving.color
+            const enemyColor = Player.oppositeColor(movingColor)
+
             this.handler.makeMove(move)
-            const isCheck = this.#isKingChecked(move.moving.color)
+            const moveIsLegal = !this.#isKingChecked(movingColor)
+            if(moveIsLegal && this.config.determineChecks){
+                move.isCheck = this.#isKingChecked(enemyColor)
+                if(move.isCheck && this.config.determineMates){
+                    move.isMate = this.getAllLegalMoves(enemyColor).length === 0
+                }
+            }
             this.handler.unMakeMove(move)
-            return !isCheck
+            return moveIsLegal
         });
     }
 
-    getAllLegalMoves(): Move[] {
+    getAllLegalMoves(color: PlayerColor = this.boardState.sideToMove): Move[] {
         let moves: Move[] = []
-        this.pieceMap.getPieceList(this.boardState.sideToMove).forEach((piece: Piece) => {
+        this.pieceMap.getPieceList(color).forEach((piece: Piece) => {
             moves = moves.concat(this.getLegalMoves(piece.square))
         })
         return moves
