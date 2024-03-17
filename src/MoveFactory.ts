@@ -1,9 +1,10 @@
-import {SquareName} from "./Square.ts";
+import {Square, SquareName} from "./Square.ts";
 import {Piece} from "./Piece.ts";
 import {Board} from "./Board.ts";
 import {Move} from "./Move.ts";
 import {CastleRight, FenNumber} from "./FenNumber.ts";
-import {PlayerColor} from "./Player.ts";
+import {Player, PlayerColor} from "./Player.ts";
+import {MoveHandler} from "./MoveHandler.ts";
 
 export class MoveFactory extends Board{
 
@@ -51,9 +52,29 @@ export class MoveFactory extends Board{
         return MoveFactory.squaresByIndex[index]
     }
 
+    readonly handler: MoveHandler
+
+    constructor(fenString: FenNumber) {
+        super(fenString);
+        this.handler = new MoveHandler(this)
+    }
+
+    getLegalMoves(square: SquareName, fenNumber: FenNumber): Move[] {
+        return this.getPseudoLegalMoves(square, fenNumber).filter((move: Move) => {
+            this.handler.makeMove(move)
+            const isCheck = this.#isKingChecked(move.moving.color)
+            this.handler.unMakeMove(move)
+            return !isCheck
+        }, fenNumber);
+    }
+
+    #isKingChecked(color: PlayerColor): boolean {
+        const square = this.pieceMap.getKing(color)?.square
+        if(!square){throw new Error(`Expected king on ${square}`)}
+        return this.#isSquareThreatenedBy(square,Player.oppositeColor(color))
+    }
 
     getPseudoLegalMoves(square: SquareName, fenNumber: FenNumber): Move[] {
-
         const piece = this.getPiece(square)
         if(!piece){
             throw new Error(`Cannot get moves. No piece on square: ${square}`)
@@ -68,6 +89,7 @@ export class MoveFactory extends Board{
             case 'k': return this.getKingMoves(square, piece, fenNumber.castleRights)
         }
     }
+
 
     getRookMoves(square: SquareName, piece: Piece): Move[]
     {
@@ -156,27 +178,36 @@ export class MoveFactory extends Board{
             return moves
         }
 
+        const movingColor = piece.color
+        const enemyColor = Player.oppositeColor(piece.color)
+
         const areSquaresEmpty = (squares: SquareName[]): boolean => {
             return squares.every((square: SquareName) =>  !this.getPiece(square))
         }
-        const isRookOnRequiredSquare = (square: SquareName, color: PlayerColor): boolean => {
+        const areSquaresSafe = (squares: SquareName[]): boolean => {
+            return squares.every((square: SquareName) =>  !this.#isSquareThreatenedBy(square, enemyColor))
+        }
+        const isRookOnRequiredSquare = (square: SquareName): boolean => {
             const piece = this.getPiece(square)
-            return piece?.type === 'r' && piece?.color === color
+            return piece?.type === 'r' && piece?.color === movingColor
+        }
+        const isCastlesTypeAllowed = (type: CastleRight, rookSquare: SquareName, emptySquares: SquareName[], safeSquares: SquareName[]) => {
+            return castleRights.includes(type) && isRookOnRequiredSquare(rookSquare) && areSquaresEmpty(emptySquares) && areSquaresSafe(safeSquares)
         }
 
         // evaluate possible castling moves
         if(piece.color === 'w' && square === 'e1'){
-            if(castleRights.indexOf('K') !== -1 && isRookOnRequiredSquare('h1', 'w') && areSquaresEmpty(['f1','g1'])){
+            if(isCastlesTypeAllowed('K', 'h1',['f1','g1'], ['e1','f1','g1'])){
                 moves.push(new Move('e1','g1',piece,null,'castles'))
             }
-            if(castleRights.indexOf('Q') !== -1 && isRookOnRequiredSquare('a1', 'w') && areSquaresEmpty(['b1','c1','d1'])){
+            if(isCastlesTypeAllowed('Q', 'a1',['d1','c1','b1'], ['e1','d1','c1'])){
                 moves.push(new Move('e1','c1',piece,null,'castles'))
             }
         }else if(piece.color === 'b' && square === 'e8'){
-            if(castleRights.indexOf('k') !== -1 && isRookOnRequiredSquare('h8', 'b') && areSquaresEmpty(['f8','g8'])){
+            if(isCastlesTypeAllowed('k', 'h8',['f8','g8'], ['e8','f8','g8'])){
                 moves.push(new Move('e8','g8',piece,null,'castles'))
             }
-            if(castleRights.indexOf('q') !== -1 && isRookOnRequiredSquare('a8', 'b') && areSquaresEmpty(['b8','c8','d8'])){
+            if(isCastlesTypeAllowed('q', 'a8',['d8','c8','b8'], ['e8','d8','c8'])){
                 moves.push(new Move('e8','c8',piece,null,'castles'))
             }
         }
@@ -227,19 +258,23 @@ export class MoveFactory extends Board{
             if(occupyingPiece){
                 moves.push(new Move(square, newSquare, piece, occupyingPiece, 'simple'))
             }else if(newSquare === enPassantTarget) {
-                moves.push(new Move(square, newSquare, piece, this.getPiece(enPassantTarget), 'en-passant'))
+                const captureSquare = Square.getSquareBehind(newSquare, piece.color)
+                const capturePiece = this.getPiece(captureSquare)
+                console.log(captureSquare)
+                if(capturePiece){
+                    moves.push(new Move(square, newSquare, piece, capturePiece, 'en-passant'))
+                }
             }
         }
 
         // test if pawn can promote
-        moves.map((move: Move): Move => {
+        return moves.map((move: Move): Move => {
             const newSquareRank = this.squares[move.newSquare].rank
             if((move.moving.color === 'w' && newSquareRank === 8) || (move.moving.color === 'b' && newSquareRank === 1)){
                 return new Move(move.oldSquare, move.newSquare, move.moving, move.captured,'pawn-promotion','q')
             }
             return move
         })
-        return moves
     }
 
     traceRayVectors(oldSquare: SquareName, piece: Piece, vectors: number[][], maxRayLength: number=7): Move[] {
@@ -273,4 +308,41 @@ export class MoveFactory extends Board{
         }
         return moves
     }
+
+    #isSquareThreatenedBy(square: SquareName, enemyColor: PlayerColor): boolean
+    {
+        const movingColor = Player.oppositeColor(enemyColor)
+        const dummyPiece = new Piece('k',movingColor)
+        let isSquareSafe = true
+
+        isSquareSafe = this.getKnightMoves(square, dummyPiece).every((move: Move) => move.captured?.type !== 'n')
+        if(!isSquareSafe){return true}
+
+        isSquareSafe = this.getRookMoves(square, dummyPiece).every((move: Move) => {
+            switch(move.captured?.type){
+                case 'r': case 'q': return false
+                case 'k': return !this.squares[move.oldSquare].isAdjacentTo(this.squares[move.newSquare])
+            }
+            return true
+        })
+        if(!isSquareSafe){return true}
+
+        isSquareSafe = this.getBishopMoves(square, dummyPiece).every((move: Move) => {
+            if(!move.captured){return true}
+            if(['r','n'].includes(move.captured.type)){return true}
+            if(['b','q'].includes(move.captured.type)){return false}
+
+            const oldSquare = this.squares[move.oldSquare]
+            const newSquare = this.squares[move.newSquare]
+            const isEnemyPieceAdjacent = oldSquare.isAdjacentTo(newSquare)
+
+            // only king and pawns left. They can only capture if adjacent
+            if(!isEnemyPieceAdjacent){return true}
+            // only piece type left is the pawn, and
+            // it can only capture if the king is in-front of the pawn's square
+            return !oldSquare.isAdvancedOf(newSquare, enemyColor)
+        })
+        return !isSquareSafe
+    }
+
 }

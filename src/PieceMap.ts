@@ -30,6 +30,10 @@ export class PieceMap
         this.captures[piece.color][piece.startSquare] = piece
     }
 
+    getKing(color: PlayerColor): null|Piece {
+        return Object.values(this.pieces[color].k)[0] ?? null
+    }
+
     changePieceType(oldType: PieceType, piece: Piece)
     {
         delete this.pieces[piece.color][oldType][piece.startSquare]

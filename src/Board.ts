@@ -6,9 +6,9 @@ import {PlayerColor} from "./Player.ts";
 import {
     bgBlue,
     bgBrightBlue,
-    bgBrightCyan,
+    bgBrightCyan, bgBrightGreen,
     bgBrightMagenta,
-    bgBrightYellow,
+    bgBrightYellow, bgRed, bgYellow,
     black,
     bold,
     dim,
@@ -83,7 +83,7 @@ export class Board
         return serialized
     }
 
-    render(): void {
+    render(highlights: SquareName[] = []): void {
 
         console.log(dim(this.serialize()))
 
@@ -102,8 +102,15 @@ export class Board
                 const piece = square.piece
 
                 let outVal = piece ? pieceMap[piece.type] + ' ' : '  '
-                outVal = square.color === 'light' ? bgBrightBlue(outVal) : bgBrightMagenta(outVal)
+
+                if(highlights.includes(square.name)){
+                    outVal = bgBrightGreen(outVal)
+                }else{
+                    outVal = square.color === 'light' ? bgBrightBlue(outVal) : bgBrightMagenta(outVal)
+                }
+
                 outVal = piece?.color === 'w' ? bold(white(outVal)) : bold(black(outVal))
+
                 return outVal
             })
 

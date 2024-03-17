@@ -1,4 +1,5 @@
 import {Piece} from "./Piece.ts";
+import {PlayerColor} from "./Player.ts";
 
 
 export type SquareName = 'a1'|'a2'|'a3'|'a4'|'a5'|'a6'|'a7'|'a8'|
@@ -15,6 +16,16 @@ export type SquareColor = 'light'|'dark'
 export type SquareRank = 1|2|3|4|5|6|7|8
 
 export type SquareFile = 'a'|'b'|'c'|'d'|'e'|'f'|'g'|'h'
+
+export class SquareCoordinate
+{
+    readonly column: number
+    readonly row: number
+    constructor(column: number, row: number) {
+        this.column = column
+        this.row = row
+    }
+}
 
 export class Square {
 
@@ -50,12 +61,15 @@ export class Square {
 
     piece: Piece|null  = null
 
+    readonly coordinates: Record<PlayerColor, SquareCoordinate>
 
     constructor(file: SquareFile, rank: SquareRank) {
         this.rank = rank
         this.file = file
         this.name = Square.getName(file, rank)
         this.color = Square.lightSquares.includes(this.name) ? 'light' : 'dark'
+        this.coordinates = Square.getCoordinates(this.name)
+
     }
 
     setPiece(piece: Piece|null|string){
@@ -112,5 +126,39 @@ export class Square {
         name = Square.sanitizeName(name)
         // @ts-ignore always valid
         return new Square(name.charAt(0), parseInt(name.charAt(1)))
+    }
+
+    isAdjacentTo(square: Square): boolean {
+        // orientation is irrelevant
+        const colDiff = Math.abs(this.coordinates.w.column - square.coordinates.w.column)
+        const rowDiff = Math.abs(this.coordinates.w.row - square.coordinates.w.row)
+        return colDiff <= 1 && rowDiff <= 1
+    }
+
+    // is this square advanced or in front of another square from chosen player's perspective
+    isAdvancedOf(square: Square, color: PlayerColor): boolean {
+        const rowDiff = this.coordinates.w.row - square.coordinates.w.row
+        return (color === 'b' && rowDiff < 0) || (color === 'w' && rowDiff > 0)
+    }
+
+    static getSquareBehind(square: SquareName, color: PlayerColor): SquareName
+    {
+        const rank = parseInt(square.charAt(1)) + (color === 'w' ? -1 : 1)
+        if(rank > 8 || rank <1){throw new Error(`There is no square behind ${this.name} from player(${color}) perspective`)}
+
+        // @ts-ignore always valid
+        return square.charAt(0) + rank.toString()
+    }
+
+    static getCoordinates(squareName: SquareName): Record<PlayerColor, SquareCoordinate> {
+        const index = Square.squaresOrder.indexOf(squareName);
+        const col = index % 8;
+        const row = Math.floor(index / 8)
+
+        // return coordinates for both orientations
+        return {
+            w: new SquareCoordinate(col, row),
+            b: new SquareCoordinate(col * -1 + 7, row * -1 + 7)
+        }
     }
 }

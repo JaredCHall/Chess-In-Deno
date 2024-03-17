@@ -18,4 +18,9 @@ export class Player {
         }
     }
 
+    static oppositeColor(color: string): PlayerColor
+    {
+        return color === 'w' ? 'b' : 'w'
+    }
+
 }
