@@ -379,7 +379,7 @@ export class MoveFactory extends Board{
             if(!isEnemyPieceAdjacent){return true}
             // only piece type left is the pawn, and
             // it can only capture if the king is in-front of the pawn's square
-            return oldSquare.isAdvancedOf(newSquare, enemyColor)
+            return !oldSquare.isAdvancedOf(newSquare, enemyColor)
         })
         return !isSquareSafe
     }
