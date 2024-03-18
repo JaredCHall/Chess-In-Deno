@@ -10,30 +10,31 @@ import {PawnMoves} from "./MoveGen/PawnMoves.ts";
 
 export class MoveFactory extends Board{
 
+    // 10 x 12 https://www.chessprogramming.org/10x12_Board
     static readonly boardBoundary: (0|1)[] = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, // rank 8
-        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, // rank 7
-        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, // rank 6
-        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, // rank 5
-        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, // rank 4
-        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, // rank 3
-        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, // rank 2
-        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, // rank 1
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 8
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 7
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 6
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 5
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 4
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 3
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 2
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 1
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ]
 
     static squaresByIndex: Record<number, SquareName> = {
-        26: 'a8', 27: 'b8', 28: 'c8', 29: 'd8', 30: 'e8', 31: 'f8', 32: 'g8', 33: 'h8', // rank 8
-        38: 'a7', 39: 'b7', 40: 'c7', 41: 'd7', 42: 'e7', 43: 'f7', 44: 'g7', 45: 'h7', // rank 7
-        50: 'a6', 51: 'b6', 52: 'c6', 53: 'd6', 54: 'e6', 55: 'f6', 56: 'g6', 57: 'h6', // rank 6
-        62: 'a5', 63: 'b5', 64: 'c5', 65: 'd5', 66: 'e5', 67: 'f5', 68: 'g5', 69: 'h5', // rank 5
-        74: 'a4', 75: 'b4', 76: 'c4', 77: 'd4', 78: 'e4', 79: 'f4', 80: 'g4', 81: 'h4', // rank 4
-        86: 'a3', 87: 'b3', 88: 'c3', 89: 'd3', 90: 'e3', 91: 'f3', 92: 'g3', 93: 'h3', // rank 3
-        98: 'a2', 99: 'b2', 100: 'c2', 101: 'd2', 102: 'e2', 103: 'f2', 104: 'g2', 105: 'h2', // rank 2
-        110: 'a1', 111: 'b1', 112: 'c1', 113: 'd1', 114: 'e1', 115: 'f1', 116: 'g1', 117: 'h1', // rank 1
+        21: 'a8', 22: 'b8', 23: 'c8', 24: 'd8', 25: 'e8', 26: 'f8', 27: 'g8', 28: 'h8', // rank 8
+        31: 'a7', 32: 'b7', 33: 'c7', 34: 'd7', 35: 'e7', 36: 'f7', 37: 'g7', 38: 'h7', // rank 7
+        41: 'a6', 42: 'b6', 43: 'c6', 44: 'd6', 45: 'e6', 46: 'f6', 47: 'g6', 48: 'h6', // rank 6
+        51: 'a5', 52: 'b5', 53: 'c5', 54: 'd5', 55: 'e5', 56: 'f5', 57: 'g5', 58: 'h5', // rank 5
+        61: 'a4', 62: 'b4', 63: 'c4', 64: 'd4', 65: 'e4', 66: 'f4', 67: 'g4', 68: 'h4', // rank 4
+        71: 'a3', 72: 'b3', 73: 'c3', 74: 'd3', 75: 'e3', 76: 'f3', 77: 'g3', 78: 'h3', // rank 3
+        81: 'a2', 82: 'b2', 83: 'c2', 84: 'd2', 85: 'e2', 86: 'f2', 87: 'g2', 88: 'h2', // rank 2
+        91: 'a1', 92: 'b1', 93: 'c1', 94: 'd1', 95: 'e1', 96: 'f1', 97: 'g1', 98: 'h1', // rank 1
     }
 
     static indexesBySquare: Record<SquareName, number> // flipped version of squaresByIndex
@@ -183,16 +184,7 @@ export class MoveFactory extends Board{
     getKnightMoves(square: SquareName, piece: Piece): Move[]
     {
         const moves = []
-        const moveOffsets = [
-            -23, // NNE
-            -10, // ENE
-            14,  // ESE
-            25,  // SSE
-            23,  // SSW
-            10,  // WSW
-            -14, // WNW
-            -25  // NNW
-        ]
+        const moveOffsets = [-21, -19,-12, -8, 8, 12, 19, 21]
         for(let i = 0; i<moveOffsets.length;i++){
             const offset = moveOffsets[i]
             const newIndex = MoveFactory.getIndex(square) + offset
@@ -330,7 +322,7 @@ export class MoveFactory extends Board{
 
             // the maximum possible moves along a ray from any position is 7, except for the king who can only move 1
             for(let j=1;j<=maxRayLength;j++){
-                const newIndex =  MoveFactory.getIndex(oldSquare) + j * (vector[0] + vector[1] * 12)
+                const newIndex =  MoveFactory.getIndex(oldSquare) + j * (vector[0] + vector[1] * 10)
 
                 if(MoveFactory.isIndexOutOfBounds(newIndex)){
                     break

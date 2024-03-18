@@ -5,8 +5,8 @@ export type PawnMoveOffsets = Record<PawnMoveOffsetType, number[]>
 
 export class PawnMoves
 {
-    static readonly whiteOffsetMap: PawnMoveOffsets = {single: [-12], double: [-24], capture: [-11, -13]}
-    static readonly blackOffsetMap: PawnMoveOffsets = {single: [12], double: [24], capture: [11, 13]}
+    static readonly whiteOffsetMap: PawnMoveOffsets = {single: [-10], double: [-20], capture: [-9, -11]}
+    static readonly blackOffsetMap: PawnMoveOffsets = {single: [10], double: [20], capture: [9, 11]}
 
     static readonly offsetMap: Record<PlayerColor, PawnMoveOffsets> = {
         w: this.whiteOffsetMap,
