@@ -137,8 +137,8 @@ export class Square {
 
     // is this square advanced or in front of another square from chosen player's perspective
     isAdvancedOf(square: Square, color: PlayerColor): boolean {
-        const rowDiff = this.coordinates.w.row - square.coordinates.w.row
-        return (color === 'b' && rowDiff < 0) || (color === 'w' && rowDiff > 0)
+        return (color === 'w' && this.rank > square.rank)
+            || (color === 'b' && this.rank < square.rank)
     }
 
     isPawnPromotionSquare(color: PlayerColor): boolean {
