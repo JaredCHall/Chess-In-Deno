@@ -116,22 +116,6 @@ export class MoveFactory extends Board{
         return moves
     }
 
-    perft(depth: number): number
-    {
-        let moveCount = 0
-        if(depth === 0){
-            return 1
-        }
-        const n_moves = this.getAllLegalMoves()
-        n_moves.forEach((move: Move) => {
-            this.handler.makeMove(move)
-            moveCount += this.perft(depth -1)
-            this.handler.unMakeMove(move)
-        })
-
-        return moveCount
-    }
-
     getPseudoLegalMoves(square: SquareName, promoteType: PromotionType|null = null): Move[] {
         const piece = this.getPiece(square)
         if(!piece){
@@ -155,7 +139,7 @@ export class MoveFactory extends Board{
             [1,0],  // E
             [0,1],  // S
             [-1,0], // W
-        ])
+        ], 7)
     }
     getBishopMoves(square: SquareName, piece: Piece): Move[]
     {
@@ -164,7 +148,7 @@ export class MoveFactory extends Board{
             [1,1],   // SE
             [-1,1],  // SW
             [-1,-1], // NW
-        ])
+        ], 7)
     }
 
     getQueenMoves(square: SquareName, piece: Piece): Move[]
@@ -178,7 +162,7 @@ export class MoveFactory extends Board{
             [-1,1],  // SW
             [-1,0],  // W
             [-1,-1], // NW
-        ])
+        ], 7)
     }
 
     getKnightMoves(square: SquareName, piece: Piece): Move[]
@@ -195,7 +179,6 @@ export class MoveFactory extends Board{
 
             const newSquare = MoveFactory.getSquareName(newIndex)
             const occupyingPiece = this.getPiece(newSquare)
-
             // occupied by a friendly piece
             if(occupyingPiece && occupyingPiece.color === piece.color){
                 continue
@@ -221,12 +204,7 @@ export class MoveFactory extends Board{
         ], 1)
 
         // evaluate potential castling moves
-        const castleRights = this.boardState.getCastleRightsForColor(piece.color)
-        // can return early if there are no castling rights or king is not on castling square
-        if(castleRights.length === 0) {
-            return moves
-        }
-        castleRights.forEach((right) => {
+        this.boardState.getCastleRightsForColor(piece.color).forEach((right) => {
             const castlesType = CastlingMoves.get(right)
             if(this.#isCastlesTypeAllowed(castlesType, piece)) {
                 moves.push(new Move(square, castlesType.kingSquares[1], piece, null, 'castles'))
@@ -267,6 +245,7 @@ export class MoveFactory extends Board{
         const moveOffsets = realSquare.isPawnStartSquare(piece.color) ? offsets.single.concat(offsets.double) : offsets.single
         this.#walkOffsets(square, moveOffsets, (newSquare, occupyingPiece, offset) => {
             if(occupyingPiece){
+                // break loop if single move fails
                 return false
             }
             const type = offsets.double[0] === offset ? 'double-pawn-move' : 'simple'
@@ -306,7 +285,6 @@ export class MoveFactory extends Board{
             if(MoveFactory.isIndexOutOfBounds(newIndex)){
                 continue
             }
-
             const newSquare = MoveFactory.getSquareName(newIndex)
             // callback and break if instructed
             const continueLoop = callback(newSquare, this.getPiece(newSquare), offset)
@@ -346,8 +324,6 @@ export class MoveFactory extends Board{
         return moves
     }
 
-
-
     #isSquareThreatenedBy(square: SquareName, enemyColor: PlayerColor): boolean
     {
         const movingColor = Player.oppositeColor(enemyColor)
@@ -378,7 +354,7 @@ export class MoveFactory extends Board{
             // only king and pawns left. They can only capture if adjacent
             if(!isEnemyPieceAdjacent){return true}
             // only piece type left is the pawn, and
-            // it can only capture if the king is in-front of the pawn's square
+            // it can only capture if the king is in front of the pawn's square
             return !oldSquare.isAdvancedOf(newSquare, enemyColor)
         })
         return !isSquareSafe
