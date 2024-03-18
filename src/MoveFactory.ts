@@ -1,8 +1,8 @@
 import {Square, SquareName} from "./Square.ts";
 import {Piece, PromotionType} from "./Piece.ts";
 import {Board} from "./Board.ts";
-import {Move, MoveType} from "./Move.ts";
-import {CastleRight, FenNumber} from "./FenNumber.ts";
+import {Move} from "./Move.ts";
+import {FenNumber} from "./FenNumber.ts";
 import {Player, PlayerColor} from "./Player.ts";
 import {MoveHandler} from "./MoveHandler.ts";
 import {CastlesType, CastlingMoves} from "./MoveGen/CastlingMoves.ts";
@@ -65,6 +65,7 @@ export class MoveFactory extends Board{
     }
 
     constructor(fenString: FenNumber) {
+
         super(fenString);
         this.handler = new MoveHandler(this)
 
@@ -83,7 +84,7 @@ export class MoveFactory extends Board{
         const newSquare = Square.sanitizeName(parts[3])
         const promoteType = parts[6] ? Piece.sanitizePromoteType(parts[6]) : null
 
-        const moves = this.getLegalMoves(oldSquare, promoteType).filter((move) => move.newSquare === newSquare)
+        const moves = this.getLegalMoves(oldSquare, promoteType).filter((move) => move.newSquare.name === newSquare)
         if(moves.length !== 1){
             throw new Error(`Illegal move: ${userInput}`)
         }
@@ -180,7 +181,7 @@ export class MoveFactory extends Board{
 
         this.#walkOffsets(square, moveOffsets, (newSquare,occupyingPiece) => {
             if(!occupyingPiece || occupyingPiece.color !== piece.color){
-                moves.push(new Move(square.name, newSquare, piece, occupyingPiece))
+                moves.push(new Move(square, newSquare, piece, occupyingPiece))
             }
         })
         return moves
@@ -203,7 +204,7 @@ export class MoveFactory extends Board{
         this.boardState.getCastleRightsForColor(piece.color).forEach((right) => {
             const castlesType = CastlingMoves.get(right)
             if(this.#isCastlesTypeAllowed(castlesType, piece)) {
-                moves.push(new Move(square.name, castlesType.kingSquares[1], piece, null, 'castles'))
+                moves.push(new Move(square, this.getSquare(castlesType.kingSquares[1]), piece, null, 'castles'))
             }
         })
         return moves
@@ -238,7 +239,7 @@ export class MoveFactory extends Board{
         let immediateSquareIsOccupied = false
         this.#walkOffsets(square, offsets.single, (newSquare, occupyingPiece) => {
             if(!occupyingPiece){
-                moves.push(new Move(square.name, newSquare, piece, null))
+                moves.push(new Move(square, newSquare, piece, null))
             }
             immediateSquareIsOccupied = occupyingPiece !== null
         })
@@ -246,7 +247,7 @@ export class MoveFactory extends Board{
         if(!immediateSquareIsOccupied && square.isPawnStartSquare(piece.color)){
             this.#walkOffsets(square, offsets.double, (newSquare, occupyingPiece) => {
                 if(!occupyingPiece) {
-                    moves.push(new Move(square.name, newSquare, piece, null, 'double-pawn-move'))
+                    moves.push(new Move(square, newSquare, piece, null, 'double-pawn-move'))
                 }
             })
         }
@@ -255,34 +256,34 @@ export class MoveFactory extends Board{
         this.#walkOffsets(square, offsets.capture, (newSquare, occupyingPiece) => {
             if(occupyingPiece && occupyingPiece.color != piece.color){
                 // normal capture
-                moves.push(new Move(square.name, newSquare, piece, occupyingPiece))
-            }else if(newSquare === this.boardState.enPassantTarget) {
+                moves.push(new Move(square, newSquare, piece, occupyingPiece))
+            }else if(newSquare.name === this.boardState.enPassantTarget) {
                 // en-passant move
-                const captureSquare = Square.getSquareBehind(newSquare, piece.color)
+                const captureSquare = Square.getSquareBehind(newSquare.name, piece.color)
                 const capturePiece = this.getPiece(captureSquare)
                 if(capturePiece){
-                    moves.push(new Move(square.name, newSquare, piece, capturePiece, 'en-passant'))
+                    moves.push(new Move(square, newSquare, piece, capturePiece, 'en-passant'))
                 }
             }
         })
 
         // set promoteType if applicable
         moves.forEach((move: Move) => {
-            if(this.squares[move.newSquare].isPawnPromotionSquare(piece.color)){
+            if(move.newSquare.isPawnPromotionSquare(piece.color)){
                 move.promoteType = promoteType ?? 'q'
             }
         })
         return moves
     }
 
-    #walkOffsets(square: Square, offsets: number[], callback: (newSquare: SquareName, occupyingPiece: Piece|null, offset: number) => void)
+    #walkOffsets(square: Square, offsets: number[], callback: (newSquare: Square, occupyingPiece: Piece|null, offset: number) => void)
     {
         for(const i in offsets){
             const offset = offsets[i]
             const newIndex  = square.index10x12 + offset
             const newSquare = this.squares10x12[newIndex]
             if(newSquare){
-                callback(newSquare.name, newSquare.piece, offset)
+                callback(newSquare, newSquare.piece, offset)
             }
         }
     }
@@ -306,7 +307,7 @@ export class MoveFactory extends Board{
                 if(occupyingPiece && occupyingPiece.color === piece.color){
                     break
                 }
-                moves.push(new Move(square.name, newSquare.name, piece, occupyingPiece))
+                moves.push(new Move(square, newSquare, piece, occupyingPiece))
                 // if there's an enemy piece, the ray is terminated
                 if(occupyingPiece){
                     break
@@ -328,7 +329,7 @@ export class MoveFactory extends Board{
         isSquareSafe = this.getRookMoves(square, dummyPiece).every((move: Move) => {
             switch(move.captured?.type){
                 case 'r': case 'q': return false
-                case 'k': return !this.squares[move.oldSquare].isAdjacentTo(this.squares[move.newSquare])
+                case 'k': return !move.oldSquare.isAdjacentTo(move.newSquare)
             }
             return true
         })
@@ -339,15 +340,13 @@ export class MoveFactory extends Board{
             if(['r','n'].includes(move.captured.type)){return true}
             if(['b','q'].includes(move.captured.type)){return false}
 
-            const oldSquare = this.squares[move.oldSquare]
-            const newSquare = this.squares[move.newSquare]
-            const isEnemyPieceAdjacent = oldSquare.isAdjacentTo(newSquare)
+            const isEnemyPieceAdjacent = move.oldSquare.isAdjacentTo(move.newSquare)
 
             // only king and pawns left. They can only capture if adjacent
             if(!isEnemyPieceAdjacent){return true}
             // only piece type left is the pawn, and
             // it can only capture if the king is in front of the pawn's square
-            return !oldSquare.isAdvancedOf(newSquare, enemyColor)
+            return !move.oldSquare.isAdvancedOf(move.newSquare, enemyColor)
         })
         return !isSquareSafe
     }

@@ -1,7 +1,5 @@
 import {Piece} from "./Piece.ts";
 import {PlayerColor} from "./Player.ts";
-import {MoveFactory} from "./MoveFactory.ts";
-
 
 export type SquareName = 'a1'|'a2'|'a3'|'a4'|'a5'|'a6'|'a7'|'a8'|
     'b1'|'b2'|'b3'|'b4'|'b5'|'b6'|'b7'|'b8'|
@@ -72,33 +70,14 @@ export class Square {
         this.name = Square.getName(file, rank)
         this.color = Square.lightSquares.includes(this.name) ? 'light' : 'dark'
         this.coordinates = Square.getCoordinates(this.name)
-        this.index10x12 = MoveFactory.indexesBySquare[this.name]
+        this.index10x12 = this.getIndex10x12()
     }
 
-    setPiece(piece: Piece|null|string){
-
-        if(typeof piece === 'string'){
-            piece = Piece.fromString(piece, this.name)
-        }
-
+    setPiece(piece: Piece|null){
         this.piece = piece
         if(piece){
             piece.square = this.name
         }
-    }
-
-    hasPiece(): boolean
-    {
-        return this.piece !== null
-    }
-
-    getPiece(): Piece
-    {
-        if(!this.piece){
-            throw new Error('Square does not have a piece.')
-        }
-
-        return this.piece
     }
     
     static sanitizeName(name: string): SquareName
@@ -156,6 +135,10 @@ export class Square {
             return this.rank === 2
         }
         return this.rank === 7
+    }
+
+    getIndex10x12(): number {
+        return (Square.ranks.indexOf(this.rank)) * 10 + Square.files.indexOf(this.file) + 21
     }
 
     static getSquareBehind(square: SquareName, color: PlayerColor): SquareName

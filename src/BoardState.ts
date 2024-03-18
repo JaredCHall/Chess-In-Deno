@@ -10,7 +10,6 @@ export class BoardState {
     halfMoveClock: number = 0
     ply: number = 0
 
-
     update(move: Move): void {
 
         // increment current ply
@@ -27,8 +26,7 @@ export class BoardState {
         if(move.type !== 'double-pawn-move'){
             this.enPassantTarget = null
         }else{
-            const square = Square.fromString(move.newSquare)
-            this.enPassantTarget = Square.sanitizeName(square.file + (square.rank === 4 ? '3' : '6'))
+            this.enPassantTarget = Square.sanitizeName(move.newSquare.file + (move.newSquare.rank === 4 ? '3' : '6'))
         }
 
         // handle castle right revocations

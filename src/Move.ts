@@ -1,4 +1,4 @@
-import {SquareName} from "./Square.ts";
+import {Square, SquareName} from "./Square.ts";
 import {Piece} from "./Piece.ts";
 import {CastleRight} from "./FenNumber.ts";
 
@@ -7,9 +7,9 @@ export type MoveType = 'simple' | 'double-pawn-move' | 'en-passant' | 'castles'
 
 export class Move
 {
-    readonly oldSquare: SquareName
+    readonly oldSquare: Square
 
-    readonly newSquare: SquareName
+    readonly newSquare: Square
 
     readonly moving: Piece
 
@@ -23,7 +23,7 @@ export class Move
 
     isMate: boolean = false
 
-    constructor(oldSquare: SquareName, newSquare: SquareName, moving: Piece, captured: Piece|null, type: MoveType = 'simple', promoteType: 'b'|'q'|'n'|'r'|null = null) {
+    constructor(oldSquare: Square, newSquare: Square, moving: Piece, captured: Piece|null, type: MoveType = 'simple', promoteType: 'b'|'q'|'n'|'r'|null = null) {
         this.oldSquare = oldSquare
         this.newSquare = newSquare
         this.moving = moving
@@ -56,9 +56,9 @@ export class Move
 
     serialize(): string
     {
-        let serialized = this.oldSquare + this.newSquare
+        let serialized = this.oldSquare.name + this.newSquare.name
         if(this.type === 'castles'){
-            switch(Move.castlesTypeByTargetSquare(this.newSquare)){
+            switch(Move.castlesTypeByTargetSquare(this.newSquare.name)){
                 case 'K':
                 case 'k':
                     serialized = 'O-O'

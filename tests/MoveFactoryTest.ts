@@ -17,20 +17,21 @@ const assertTargetSquaresEqual = (moves: Move[], expected: SquareName[]) => {
 }
 
 const moveToTargetSquareNames = (moves: Move[]): SquareName[] => {
-    return moves.map((move: Move) => move.newSquare).filter((v,i,a)=>a.indexOf(v)==i)
+    return moves.map((move: Move) => move.newSquare.name).filter((v,i,a)=>a.indexOf(v)==i)
 }
 
 const assertGeneratesMoves = (fen: string, square: SquareName, expected: SquareName[]): Move[] => {
     const fenNumber = new FenNumber(fen)
     const factory = getFactory(fenNumber)
     const moves = factory.getLegalMoves(square)
+
     factory.render(moveToTargetSquareNames(moves))
     assertTargetSquaresEqual(moves,expected)
     return moves
 }
 
 const assertHasCaptureOn = (moves: Move[], square: SquareName, pieceFen: string) => {
-    const captureMove = moves.filter((move: Move) => move.newSquare === square)
+    const captureMove = moves.filter((move: Move) => move.newSquare.name === square)
     assertEquals(captureMove.length,1, `Capture move found on square: {$square}`)
     assertExists(captureMove[0].captured)
     assertEquals(captureMove[0].captured?.serialize(), pieceFen)
@@ -161,13 +162,13 @@ Deno.test('it forbids moving into and allows moving out of check', () => {
 
 Deno.test('it marks checking moves as checks', () => {
     const moves = assertGeneratesMoves('rnbqkbnr/pppp1ppp/8/4p3/5P2/5N2/PPPPP1PP/RNBQKB1R', 'd8', ['e7','f6','g5','h4'])
-    const move = moves.filter((move) => move.newSquare === 'h4')[0]
+    const move = moves.filter((move) => move.newSquare.name === 'h4')[0]
     assertEquals(move.isCheck, true)
 })
 
 Deno.test('it marks mating move as mate', () => {
     const moves = assertGeneratesMoves('rnbqkbnr/pppp1ppp/4p3/8/6P1/5P2/PPPPP2P/RNBQKBNR', 'd8', ['e7','f6','g5','h4'])
-    const move = moves.filter((move) => move.newSquare === 'h4')[0]
+    const move = moves.filter((move) => move.newSquare.name === 'h4')[0]
     assertEquals(move.isMate, true)
 })
 

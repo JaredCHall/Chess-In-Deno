@@ -1,16 +1,23 @@
 import {Board} from "../src/Board.ts";
 import {MoveHandler} from "../src/MoveHandler.ts";
-import {Move} from "../src/Move.ts";
+import {Move, MoveType} from "../src/Move.ts";
 import {assertEquals} from "https://deno.land/std@0.219.0/assert/assert_equals.ts";
-import {Piece} from "../src/Piece.ts";
+import {Piece, PromotionType} from "../src/Piece.ts";
 import {SquareName} from "../src/Square.ts";
 import { assert } from "https://deno.land/std@0.219.0/assert/assert.ts";
 
+const newMove = (handler: MoveHandler, oldSquare: SquareName, newSquare: SquareName, moving: Piece, captured: Piece|null, type: MoveType = 'simple', promoteType: PromotionType|null = null): Move => {
+    return new Move(
+        handler.board.getSquare(oldSquare),
+        handler.board.getSquare(newSquare),
+        moving, captured, type, promoteType
+    )
+}
 
 Deno.test('it makes simple move', () => {
     const handler = getHandler('3k4/8/8/6r1/8/5N2/8/3K4')
     const whiteKnight = getPiece(handler,'f3');
-    const move = new Move('f3','e5',whiteKnight, null)
+    const move = newMove(handler, 'f3','e5',whiteKnight, null)
 
     makeMove(handler, move)
     assertSerializesTo(handler, '3k4/8/8/4N1r1/8/8/8/3K4')
@@ -25,7 +32,7 @@ Deno.test('it makes move with capture', () => {
     const handler = getHandler('3k4/8/8/6r1/8/5N2/8/3K4')
     const movedPiece = getPiece(handler, 'f3')
     const capturedPiece = getPiece(handler, 'g5')
-    const move = new Move('f3','g5',movedPiece, capturedPiece)
+    const move= newMove(handler, 'f3','g5',movedPiece, capturedPiece)
 
     makeMove(handler, move)
     assertSerializesTo(handler, '3k4/8/8/6N1/8/8/8/3K4')
@@ -41,7 +48,7 @@ Deno.test('it makes en-passant moves', () => {
     const handler = getHandler('3k4/8/8/8/1pP5/8/1K6/8')
     const blackPawn = getPiece(handler,'b4')
     const whitePawn = getPiece(handler,'c4')
-    const move = new Move('b4','c3',blackPawn, whitePawn,'en-passant')
+    const move = newMove(handler, 'b4','c3',blackPawn, whitePawn,'en-passant')
 
     makeMove(handler, move)
     assertSerializesTo(handler, '3k4/8/8/8/8/2p5/1K6/8')
@@ -59,12 +66,12 @@ Deno.test('It castles short and long', () => {
     const whiteKing = getPiece(handler,'e1')
     const rookA1 = getPiece(handler,'a1')
     const rookH1 = getPiece(handler,'h1')
-    const blackKing = getPiece(handler,'e8')
+    const blackKing: Piece = getPiece(handler,'e8')
     const rookA8 = getPiece(handler,'a8')
     const rookH8 = getPiece(handler,'h8')
 
     // castles short as white
-    let move = new Move('e1','g1', whiteKing, rookA1, 'castles')
+    let move= newMove(handler, 'e1','g1', whiteKing, rookA1, 'castles')
     makeMove(handler, move)
     assertSerializesTo(handler,'r3k2r/8/8/8/8/8/8/R4RK1')
     assertPieceOnSquare(handler, 'g1', whiteKing)
@@ -75,7 +82,7 @@ Deno.test('It castles short and long', () => {
     assertPieceOnSquare(handler, 'h1', rookH1)
 
     // castles long as white
-    move = new Move('e1','c1', whiteKing, rookH1, 'castles')
+    move = newMove(handler, 'e1','c1', whiteKing, rookH1, 'castles')
     makeMove(handler, move)
     assertSerializesTo(handler, 'r3k2r/8/8/8/8/8/8/2KR3R')
     assertPieceOnSquare(handler, 'c1', whiteKing)
@@ -86,7 +93,7 @@ Deno.test('It castles short and long', () => {
     assertPieceOnSquare(handler, 'a1', rookA1)
 
     // castles short as black
-    move = new Move('e8','g8', blackKing, rookA1, 'castles')
+    move = newMove(handler, 'e8','g8', blackKing, rookA1, 'castles')
     makeMove(handler, move)
     assertSerializesTo(handler,'r4rk1/8/8/8/8/8/8/R3K2R')
     assertPieceOnSquare(handler, 'g8', blackKing)
@@ -97,7 +104,7 @@ Deno.test('It castles short and long', () => {
     assertPieceOnSquare(handler, 'h8', rookH8)
 
     // castles long as black
-    move = new Move('e8','c8', whiteKing, rookH1, 'castles')
+    move = newMove(handler, 'e8','c8', whiteKing, rookH1, 'castles')
     makeMove(handler, move)
     assertSerializesTo(handler, '2kr3r/8/8/8/8/8/8/R3K2R')
     assertPieceOnSquare(handler, 'c8', blackKing)
@@ -116,7 +123,7 @@ Deno.test('It promotes pawn', () => {
     const whiteKnight = getPiece(handler,'c1')
 
     // promotes to queen
-    let move = new Move('g7', 'g8', whitePawn, null, 'simple', 'q')
+    let move = newMove(handler, 'g7', 'g8', whitePawn, null, 'simple', 'q')
     makeMove(handler, move)
     assertSerializesTo(handler,'2k3Q1/8/8/8/8/8/1p6/2N1K3')
     assertEquals(whitePawn.type, 'q')
@@ -127,7 +134,7 @@ Deno.test('It promotes pawn', () => {
     assertPieceOnSquare(handler,'g7', whitePawn)
 
     // promotes to bishop
-    move = new Move('g7', 'g8', whitePawn, null, 'simple', 'b')
+    move = newMove(handler, 'g7', 'g8', whitePawn, null, 'simple', 'b')
     makeMove(handler, move)
     assertSerializesTo(handler,'2k3B1/8/8/8/8/8/1p6/2N1K3')
     assertEquals(whitePawn.type, 'b')
@@ -138,7 +145,7 @@ Deno.test('It promotes pawn', () => {
     assertPieceOnSquare(handler,'g7', whitePawn)
 
     // promotes to bishop
-    move = new Move('b2', 'c1', blackPawn, whiteKnight, 'simple', 'n')
+    move = newMove(handler, 'b2', 'c1', blackPawn, whiteKnight, 'simple', 'n')
     makeMove(handler, move)
     assertSerializesTo(handler,'2k5/6P1/8/8/8/8/8/2n1K3')
     assertEquals(blackPawn.type, 'n')
@@ -151,7 +158,7 @@ Deno.test('It promotes pawn', () => {
     assertPieceOnSquare(handler, 'c1', whiteKnight)
 
     // promotes to rook
-    move = new Move('b2', 'c1', blackPawn, whiteKnight, 'simple', 'r')
+    move = newMove(handler, 'b2', 'c1', blackPawn, whiteKnight, 'simple', 'r')
     makeMove(handler, move)
     assertSerializesTo(handler, '2k5/6P1/8/8/8/8/8/2r1K3')
     assertEquals(blackPawn.type, 'r')

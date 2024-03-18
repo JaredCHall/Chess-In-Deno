@@ -48,6 +48,10 @@ export class Board
         this.squares[square].setPiece(piece)
     }
 
+    getSquare(square: SquareName): Square {
+        return this.squares[square]
+    }
+
     saveCurrentState(): void
     {
         this.positions[this.boardState.ply] = this.boardState.clone()
