@@ -1,5 +1,6 @@
 import {Piece} from "./Piece.ts";
 import {PlayerColor} from "./Player.ts";
+import {MoveFactory} from "./MoveFactory.ts";
 
 
 export type SquareName = 'a1'|'a2'|'a3'|'a4'|'a5'|'a6'|'a7'|'a8'|
@@ -63,13 +64,15 @@ export class Square {
 
     readonly coordinates: Record<PlayerColor, SquareCoordinate>
 
+    readonly index10x12: number
+
     constructor(file: SquareFile, rank: SquareRank) {
         this.rank = rank
         this.file = file
         this.name = Square.getName(file, rank)
         this.color = Square.lightSquares.includes(this.name) ? 'light' : 'dark'
         this.coordinates = Square.getCoordinates(this.name)
-
+        this.index10x12 = MoveFactory.indexesBySquare[this.name]
     }
 
     setPiece(piece: Piece|null|string){
