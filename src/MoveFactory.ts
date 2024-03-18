@@ -56,7 +56,7 @@ export class MoveFactory extends Board{
             if(moveIsLegal && this.config.determineChecks){
                 move.isCheck = this.#isKingChecked(enemyColor)
                 if(move.isCheck && this.config.determineMates){
-                    move.isMate = this.getAllLegalMoves(enemyColor).length === 0
+                    move.isMate = !this.hasLegalMoves(enemyColor)
                 }
             }
             this.handler.unMakeMove(move)
@@ -70,6 +70,18 @@ export class MoveFactory extends Board{
             moves = moves.concat(this.getLegalMoves(piece.square))
         })
         return moves
+    }
+
+    hasLegalMoves(color: PlayerColor): boolean
+    {
+        const pieces = this.pieceMap.getPieceList(color)
+        for(const i in pieces){
+            const piece = pieces[i]
+            if(this.getLegalMoves(piece.square).length > 0){
+                return true
+            }
+        }
+        return false
     }
 
     getPseudoLegalMoves(squareName: SquareName, promoteType: PromotionType|null = null): Move[] {
