@@ -1,10 +1,12 @@
 import {Square, SquareName} from "./Square.ts";
 import {Piece, PromotionType} from "./Piece.ts";
 import {Board} from "./Board.ts";
-import {Move} from "./Move.ts";
+import {Move, MoveType} from "./Move.ts";
 import {CastleRight, FenNumber} from "./FenNumber.ts";
 import {Player, PlayerColor} from "./Player.ts";
 import {MoveHandler} from "./MoveHandler.ts";
+import {CastlesType, CastlingMoves} from "./MoveGen/CastlingMoves.ts";
+import {PawnMoves} from "./MoveGen/PawnMoves.ts";
 
 export class MoveFactory extends Board{
 
@@ -226,47 +228,38 @@ export class MoveFactory extends Board{
             [-1,-1], // NW
         ], 1)
 
-        // no castle rights, this is a full list of moves
+        // evaluate potential castling moves
         const castleRights = this.boardState.getCastleRightsForColor(piece.color)
-        if(castleRights.length === 0){
+        // can return early if there are no castling rights or king is not on castling square
+        if(castleRights.length === 0) {
             return moves
         }
-
-        const movingColor = piece.color
-        const enemyColor = Player.oppositeColor(piece.color)
-
-        const areSquaresEmpty = (squares: SquareName[]): boolean => {
-            return squares.every((square: SquareName) =>  !this.getPiece(square))
-        }
-        const areSquaresSafe = (squares: SquareName[]): boolean => {
-            return squares.every((square: SquareName) =>  !this.#isSquareThreatenedBy(square, enemyColor))
-        }
-        const isRookOnRequiredSquare = (square: SquareName): boolean => {
-            const piece = this.getPiece(square)
-            return piece?.type === 'r' && piece?.color === movingColor
-        }
-        const isCastlesTypeAllowed = (type: CastleRight, rookSquare: SquareName, emptySquares: SquareName[], safeSquares: SquareName[]) => {
-            return castleRights.includes(type) && isRookOnRequiredSquare(rookSquare) && areSquaresEmpty(emptySquares) && areSquaresSafe(safeSquares)
-        }
-
-        // evaluate possible castling moves
-        if(piece.color === 'w' && square === 'e1'){
-            if(isCastlesTypeAllowed('K', 'h1',['f1','g1'], ['e1','f1','g1'])){
-                moves.push(new Move('e1','g1',piece,null,'castles'))
+        castleRights.forEach((right) => {
+            const castlesType = CastlingMoves.get(right)
+            if(this.#isCastlesTypeAllowed(castlesType, piece)) {
+                moves.push(new Move(square, castlesType.kingSquares[1], piece, null, 'castles'))
             }
-            if(isCastlesTypeAllowed('Q', 'a1',['d1','c1','b1'], ['e1','d1','c1'])){
-                moves.push(new Move('e1','c1',piece,null,'castles'))
-            }
-        }else if(piece.color === 'b' && square === 'e8'){
-            if(isCastlesTypeAllowed('k', 'h8',['f8','g8'], ['e8','f8','g8'])){
-                moves.push(new Move('e8','g8',piece,null,'castles'))
-            }
-            if(isCastlesTypeAllowed('q', 'a8',['d8','c8','b8'], ['e8','d8','c8'])){
-                moves.push(new Move('e8','c8',piece,null,'castles'))
-            }
-        }
-
+        })
         return moves
+    }
+
+    #isCastlesTypeAllowed(castlesType: CastlesType, king: Piece): boolean
+    {
+        // king must be on the expected square
+        if(king.square !== castlesType.kingSquares[0]){
+            return false
+        }
+        // expected rook must be on the expected square
+        const rook = this.getPiece(castlesType.rookSquares[0])
+        if(!rook || rook.color !== king.color || rook.type !== 'r'){
+            return false
+        }
+        // cannot castle if expected empty squares are occupied
+        if(!castlesType.emptySquares.every((square: SquareName) =>  !this.getPiece(square))){
+            return false
+        }
+        // can only castle if all expected safe squares are in fact safe
+        return castlesType.safeSquares.every((square: SquareName) => !this.#isSquareThreatenedBy(square, Player.oppositeColor(king.color)))
     }
 
     getPawnMoves(square: SquareName, piece: Piece, promoteType: PromotionType|null = null)
@@ -274,63 +267,59 @@ export class MoveFactory extends Board{
 
         const enPassantTarget = this.boardState.enPassantTarget
 
-        const moves = []
-        const isPieceWhite = piece.color == 'w'
+        const moves: Move[] = []
+        const offsets = PawnMoves.getOffsets(piece.color)
+        const realSquare = this.squares[square]
 
-        const moveOffsets = isPieceWhite ? [-12] : [12] // N or S
-        const captureOffsets = isPieceWhite ? [-11, -13] : [11, 13] // NE,NW or SW,SE
-
-        // determine if pawn is on starting square
-        const startingRank = this.squares[square].rank
-        const isOnStartingRank = (isPieceWhite && startingRank == 2) || (!isPieceWhite && startingRank == 7)
-        if(isOnStartingRank){
-            moveOffsets.push(isPieceWhite ? -24 : 24) // N or S
-        }
-
-        // test if pawn can move forward
-        for(const i in moveOffsets){
-            const offset = moveOffsets[i]
-            const newIndex = MoveFactory.getIndex(square) + offset
-            if(MoveFactory.isIndexOutOfBounds(newIndex)){
-                break
-            }
-            const newSquare = MoveFactory.getSquareName(newIndex)
-            const occupyingPiece = this.getPiece(newSquare)
+        // handle single and double space moves
+        const moveOffsets = realSquare.isPawnStartSquare(piece.color) ? offsets.single.concat(offsets.double) : offsets.single
+        this.#walkOffsets(square, moveOffsets, (newSquare, occupyingPiece, offset) => {
             if(occupyingPiece){
-                break
+                return false
             }
-            moves.push(new Move(square, newSquare, piece, null, Math.abs(offset) === 24 ? 'double-pawn-move' : 'simple'))
-        }
-
-        // test if pawn can capture diagonally
-        for(const i in captureOffsets){
-            const offset = captureOffsets[i]
-            const newIndex = MoveFactory.getIndex(square) + offset
-            if(MoveFactory.isIndexOutOfBounds(newIndex)){
-                continue
-            }
-            const newSquare = MoveFactory.getSquareName(newIndex)
-            const occupyingPiece = this.getPiece(newSquare)
-
-            if(occupyingPiece && occupyingPiece.color !== piece.color){
-                moves.push(new Move(square, newSquare, piece, occupyingPiece, 'simple'))
+            const type = offsets.double[0] === offset ? 'double-pawn-move' : 'simple'
+            moves.push(new Move(square, newSquare, piece, null, type))
+        })
+        // handle captures and en-passant
+        this.#walkOffsets(square, offsets.capture, (newSquare, occupyingPiece) => {
+            if(occupyingPiece && occupyingPiece.color != piece.color){
+                // normal capture
+                moves.push(new Move(square, newSquare, piece, occupyingPiece))
             }else if(newSquare === enPassantTarget) {
+                // en-passant move
                 const captureSquare = Square.getSquareBehind(newSquare, piece.color)
                 const capturePiece = this.getPiece(captureSquare)
                 if(capturePiece){
                     moves.push(new Move(square, newSquare, piece, capturePiece, 'en-passant'))
                 }
             }
-        }
-
-        // test if pawn can promote
-        return moves.map((move: Move): Move => {
-            const newSquareRank = this.squares[move.newSquare].rank
-            if((move.moving.color === 'w' && newSquareRank === 8) || (move.moving.color === 'b' && newSquareRank === 1)){
-                return new Move(move.oldSquare, move.newSquare, move.moving, move.captured,'pawn-promotion',promoteType ?? 'q')
-            }
-            return move
         })
+
+        // set promoteType if applicable
+        moves.forEach((move: Move) => {
+            if(this.squares[move.newSquare].isPawnPromotionSquare(piece.color)){
+                move.promoteType = promoteType ?? 'q'
+            }
+        })
+        return moves
+    }
+
+    #walkOffsets(oldSquare: SquareName, offsets: number[], callback: (newSquare: SquareName, occupyingPiece: Piece|null, offset: number) => boolean|void)
+    {
+        const oldIndex = MoveFactory.getIndex(oldSquare)
+        for(const i in offsets){
+            const offset = offsets[i]
+            const newIndex  = oldIndex + offset
+
+            if(MoveFactory.isIndexOutOfBounds(newIndex)){
+                continue
+            }
+
+            const newSquare = MoveFactory.getSquareName(newIndex)
+            // callback and break if instructed
+            const continueLoop = callback(newSquare, this.getPiece(newSquare), offset)
+            if(continueLoop === false){break}
+        }
     }
 
     traceRayVectors(oldSquare: SquareName, piece: Piece, vectors: number[][], maxRayLength: number=7): Move[] {
@@ -364,6 +353,8 @@ export class MoveFactory extends Board{
         }
         return moves
     }
+
+
 
     #isSquareThreatenedBy(square: SquareName, enemyColor: PlayerColor): boolean
     {

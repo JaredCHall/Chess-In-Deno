@@ -141,6 +141,20 @@ export class Square {
         return (color === 'b' && rowDiff < 0) || (color === 'w' && rowDiff > 0)
     }
 
+    isPawnPromotionSquare(color: PlayerColor): boolean {
+        if(color === 'w'){
+            return this.rank === 8
+        }
+        return this.rank === 1
+    }
+
+    isPawnStartSquare(color: PlayerColor): boolean {
+        if(color === 'w'){
+            return this.rank === 2
+        }
+        return this.rank === 7
+    }
+
     static getSquareBehind(square: SquareName, color: PlayerColor): SquareName
     {
         const rank = parseInt(square.charAt(1)) + (color === 'w' ? -1 : 1)

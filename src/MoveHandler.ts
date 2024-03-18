@@ -2,6 +2,7 @@ import {Board} from "./Board.ts";
 import {Move} from "./Move.ts";
 import {Piece, PromotionType} from "./Piece.ts";
 import {SquareName} from "./Square.ts";
+import {CastlingMoves} from "./MoveGen/CastlingMoves.ts";
 
 export class MoveHandler {
 
@@ -19,11 +20,10 @@ export class MoveHandler {
             case 'en-passant': this.#makeEnPassantMove(move); break;
             default:
                 this.#makeSimpleMove(move.oldSquare, move.newSquare, this.board.getPiece(move.newSquare))
-
         }
 
-        if(move.type === 'pawn-promotion'){
-            this.#promotePiece(move.newSquare, move.promoteType ?? 'q')
+        if(move.promoteType){
+            this.#promotePiece(move.newSquare, move.promoteType)
         }
         // save and update the existing board state for use in unMakes
         this.board.saveCurrentState()
@@ -42,7 +42,7 @@ export class MoveHandler {
                 }
         }
 
-        if(move.type === 'pawn-promotion'){
+        if(move.promoteType){
             this.#demotePiece(move.oldSquare)
         }
 
@@ -95,49 +95,19 @@ export class MoveHandler {
 
     #makeCastlingMove(move: Move): void
     {
-        switch(Move.castlesTypeByTargetSquare(move.newSquare)){
-            case 'K':
-                this.#makeSimpleMove('e1', 'g1')
-                this.#makeSimpleMove('h1', 'f1')
-                break
-            case 'k':
-                this.#makeSimpleMove('e8', 'g8')
-                this.#makeSimpleMove('h8', 'f8')
-                break
-            case 'Q':
-                this.#makeSimpleMove('e1', 'c1')
-                this.#makeSimpleMove('a1', 'd1')
-                break
-            case 'q':
-                this.#makeSimpleMove('e8', 'c8')
-                this.#makeSimpleMove('a8', 'd8')
-                break
-            default:
-                throw new Error(`Unexpected castles-type`)
-        }
+        // @ts-ignore assumed passed Moves are valid
+        const castlesType = CastlingMoves.getByTargetSquare(move.newSquare)
+
+        this.#makeSimpleMove(castlesType.kingSquares[0], castlesType.kingSquares[1])
+        this.#makeSimpleMove(castlesType.rookSquares[0], castlesType.rookSquares[1])
     }
     #unmakeCastlingMove(move: Move): void
     {
-        switch(Move.castlesTypeByTargetSquare(move.newSquare)){
-            case 'K':
-                this.#makeSimpleMove('g1', 'e1')
-                this.#makeSimpleMove('f1', 'h1')
-                return
-            case 'k':
-                this.#makeSimpleMove('g8', 'e8')
-                this.#makeSimpleMove('f8', 'h8')
-                return
-            case 'Q':
-                this.#makeSimpleMove('c1', 'e1')
-                this.#makeSimpleMove('d1', 'a1')
-                return
-            case 'q':
-                this.#makeSimpleMove('c8', 'e8')
-                this.#makeSimpleMove('d8', 'a8')
-                return
-            default:
-                throw new Error(`Unexpected castles-type`)
-        }
+        // @ts-ignore assumed passed Moves are valid
+        const castlesType = CastlingMoves.getByTargetSquare(move.newSquare)
+
+        this.#makeSimpleMove(castlesType.kingSquares[1], castlesType.kingSquares[0])
+        this.#makeSimpleMove(castlesType.rookSquares[1], castlesType.rookSquares[0])
     }
 
     #makeEnPassantMove(move: Move): void

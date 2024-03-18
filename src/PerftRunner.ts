@@ -1,20 +1,40 @@
-import { Board } from "./Board.ts";
 import { Move } from "./Move.ts";
-import {MoveHandler} from "./MoveHandler.ts";
 import {MoveFactory} from "./MoveFactory.ts";
 import { FenNumber } from "./FenNumber.ts";
 
 
-class Counter {
-    nodes: number = 0
-    captures: number = 0
-    passants: number = 0
-    castles: number = 0
-    promotions: number = 0
-    checks: number =  0
-    discoveredChecks: number = 0
-    doubleChecks: number = 0
-    checkMates: number = 0
+export class PerftCounter {
+    nodes: number
+    captures: number
+    passants: number
+    castles: number
+    promotions: number
+    checks: number
+    discoveredChecks: number
+    doubleChecks: number
+    checkMates: number
+
+    constructor(
+        nodes: number = 0,
+        captures: number = 0,
+        passants: number = 0,
+        castles: number = 0,
+        promotions: number = 0,
+        checks: number =  0,
+        discoveredChecks: number = 0,
+        doubleChecks: number = 0,
+        checkMates: number = 0,
+    ) {
+        this.nodes = nodes
+        this.captures = captures
+        this.passants = passants
+        this.castles = castles
+        this.promotions = promotions
+        this.checks = checks
+        this.discoveredChecks = discoveredChecks
+        this.doubleChecks = doubleChecks
+        this.checkMates = checkMates
+    }
 
     update(move: Move): void
     {
@@ -27,7 +47,7 @@ class Counter {
         }else if(move.type === 'castles'){
             this.castles++
         }
-        if(move.type === 'pawn-promotion'){
+        if(move.promoteType){
             this.promotions++
         }
         if(move.isCheck){
@@ -42,14 +62,14 @@ class Counter {
 export class PerftRunner {
 
     factory: MoveFactory
-    counter: Counter
+    counter: PerftCounter
 
     constructor(startFen: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
         this.factory = new MoveFactory(new FenNumber(startFen))
-        this.counter = new Counter()
+        this.counter = new PerftCounter()
     }
 
-    run(depth: number=0): Counter
+    run(depth: number=0): PerftCounter
     {
         if(depth === 0){
             this.counter.nodes++

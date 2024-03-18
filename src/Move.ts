@@ -3,7 +3,7 @@ import {Piece} from "./Piece.ts";
 import {CastleRight} from "./FenNumber.ts";
 
 
-export type MoveType = 'simple' | 'double-pawn-move' | 'en-passant' | 'pawn-promotion' | 'castles'
+export type MoveType = 'simple' | 'double-pawn-move' | 'en-passant' | 'castles'
 
 export class Move
 {
@@ -17,7 +17,7 @@ export class Move
 
     readonly type: MoveType
 
-    readonly promoteType: 'b'|'q'|'n'|'r'|null
+    promoteType: 'b'|'q'|'n'|'r'|null
 
     isCheck: boolean = false
 
@@ -70,7 +70,7 @@ export class Move
             }
         }
 
-        if(this.type === 'pawn-promotion'){
+        if(this.promoteType){
             serialized += '='+this.moving.type.toUpperCase()
         }
         return serialized

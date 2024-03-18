@@ -13,6 +13,10 @@ const counters = runner.run(depth)
 
 console.table(counters)
 
+console.log(navigator.hardwareConcurrency)
+
+
+
 
 // const fenNumber = new FenNumber('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
 // const factory = new MoveFactory(fenNumber)
