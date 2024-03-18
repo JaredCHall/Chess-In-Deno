@@ -10,53 +10,6 @@ import {PawnMoves} from "./MoveGen/PawnMoves.ts";
 
 export class MoveFactory extends Board{
 
-    // 10 x 12 https://www.chessprogramming.org/10x12_Board
-    static readonly boardBoundary: (0|1)[] = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 8
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 7
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 6
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 5
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 4
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 3
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 2
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, // rank 1
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ]
-
-    static squaresByIndex: Record<number, SquareName> = {
-        21: 'a8', 22: 'b8', 23: 'c8', 24: 'd8', 25: 'e8', 26: 'f8', 27: 'g8', 28: 'h8', // rank 8
-        31: 'a7', 32: 'b7', 33: 'c7', 34: 'd7', 35: 'e7', 36: 'f7', 37: 'g7', 38: 'h7', // rank 7
-        41: 'a6', 42: 'b6', 43: 'c6', 44: 'd6', 45: 'e6', 46: 'f6', 47: 'g6', 48: 'h6', // rank 6
-        51: 'a5', 52: 'b5', 53: 'c5', 54: 'd5', 55: 'e5', 56: 'f5', 57: 'g5', 58: 'h5', // rank 5
-        61: 'a4', 62: 'b4', 63: 'c4', 64: 'd4', 65: 'e4', 66: 'f4', 67: 'g4', 68: 'h4', // rank 4
-        71: 'a3', 72: 'b3', 73: 'c3', 74: 'd3', 75: 'e3', 76: 'f3', 77: 'g3', 78: 'h3', // rank 3
-        81: 'a2', 82: 'b2', 83: 'c2', 84: 'd2', 85: 'e2', 86: 'f2', 87: 'g2', 88: 'h2', // rank 2
-        91: 'a1', 92: 'b1', 93: 'c1', 94: 'd1', 95: 'e1', 96: 'f1', 97: 'g1', 98: 'h1', // rank 1
-    }
-
-    readonly squares10x12: Record<number, Square|null> = {}
-
-    static indexesBySquare: Record<SquareName, number> // flipped version of squaresByIndex
-    static {
-        // @ts-ignore - flipped keys are correct
-        MoveFactory.indexesBySquare = Object.fromEntries(Object.entries(this.squaresByIndex).map(([key, value]) => [value, parseInt(key)]))
-    }
-
-    static isIndexOutOfBounds(index: number): boolean {
-        return MoveFactory.boardBoundary[index] === 0
-    }
-
-    static getIndex(name: SquareName): number {
-        return MoveFactory.indexesBySquare[name]
-    }
-
-    static getSquareName(index: number): SquareName {
-        return MoveFactory.squaresByIndex[index]
-    }
-
     readonly handler: MoveHandler
 
     readonly config = {
@@ -68,10 +21,6 @@ export class MoveFactory extends Board{
 
         super(fenString);
         this.handler = new MoveHandler(this)
-
-        MoveFactory.boardBoundary.forEach((inBounds, index) => {
-            this.squares10x12[index] = inBounds ? this.squares[MoveFactory.getSquareName(index)] : null
-        })
     }
 
     makeFromCoordinateNotation(userInput: string): Move

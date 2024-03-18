@@ -11,7 +11,7 @@ import {
     bold,
     dim,
     white
-} from "https://deno.land/std@0.219.0/fmt/colors.ts";
+} from "https://deno.land/std@0.219.1/fmt/colors.ts";
 
 export type BoardSquares = Record<SquareName, Square>
 export type BoardPositions = Record<number, BoardState> // indexed by move ply
@@ -21,6 +21,8 @@ export type BoardPositions = Record<number, BoardState> // indexed by move ply
 export class Board
 {
     readonly squares: BoardSquares
+
+    readonly squares10x12: (Square|null)[] = []
 
     readonly pieceMap: PieceMap = new PieceMap()
 
@@ -179,8 +181,10 @@ export class Board
 
     #buildSquareSet(): BoardSquares {
         const squares: Partial<BoardSquares> = {}
-        Square.squaresOrder.forEach((square: SquareName) => {
-            squares[square] = Square.fromString(square)
+        Square.squaresOrder.forEach((squareName: SquareName) => {
+            const square = Square.fromString(squareName)
+            squares[squareName] = square
+            this.squares10x12[square.index10x12] = square
         })
         // @ts-ignore this is correct actually
         return squares
