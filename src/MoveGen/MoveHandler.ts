@@ -3,14 +3,7 @@ import {CastlingMove, Move} from "./Move.ts";
 import {Piece, PromotionType} from "./Piece.ts";
 import {Square} from "./Square.ts";
 
-export class MoveHandler {
-
-    readonly board: Board
-
-    constructor(board: Board) {
-        this.board = board
-    }
-
+export class MoveHandler extends Board {
     makeMove(move: Move)
     {
         switch(move.type){
@@ -24,18 +17,8 @@ export class MoveHandler {
             this.#promotePiece(move.newSquare, move.promoteType)
         }
         // save and update the existing board state for use in unMakes
-        this.board.saveCurrentState()
-        this.board.boardState.update(move)
-    }
-
-    #makeSimpleMove(oldSquare: Square, newSquare: Square, capturedPiece: Piece|null = null)
-    {
-        const moving = oldSquare.piece
-        oldSquare.setPiece(null)
-        if(capturedPiece){
-            this.#capturePiece(capturedPiece)
-        }
-        newSquare.setPiece(moving)
+        this.saveCurrentState()
+        this.boardState.update(move)
     }
 
     unMakeMove(move: Move)
@@ -52,62 +35,72 @@ export class MoveHandler {
         if(move.promoteType){
             this.#demotePiece(move.oldSquare)
         }
-        this.board.restoreLastState()
+        this.restoreLastState()
+    }
+
+    #makeSimpleMove(oldSquare: Square, newSquare: Square, capturedPiece: Piece|null = null)
+    {
+        const moving = oldSquare.piece
+        oldSquare.setPiece(null)
+        if(capturedPiece){
+            this.#capturePiece(capturedPiece)
+        }
+        newSquare.setPiece(moving)
     }
 
     #capturePiece(piece: Piece): void {
-        this.board.pieceMap.removePiece(piece)
+        this.pieceMap.removePiece(piece)
     }
 
     #restorePiece(piece: Piece, square: Square): void {
         // @ts-ignore speed
-        const originalPiece: Piece = this.board.pieceMap.captures[piece.color][piece.startSquare]
-        delete this.board.pieceMap.captures[piece.color][piece.startSquare]
-        this.board.pieceMap.addPiece(originalPiece)
+        const originalPiece: Piece = this.pieceMap.captures[piece.color][piece.startSquare]
+        delete this.pieceMap.captures[piece.color][piece.startSquare]
+        this.pieceMap.addPiece(originalPiece)
         square.setPiece(originalPiece)
     }
 
     #promotePiece(square: Square, promoteType: PromotionType): void {
-        const piece = this.board.getPiece(square.name)
+        const piece = this.getPiece(square.name)
         if(!piece){
             throw new Error(`Cannot promote piece. No piece on square: ${square.name}`)
         }
         piece.promote(promoteType)
-        this.board.pieceMap.changePieceType('p', piece)
+        this.pieceMap.changePieceType('p', piece)
     }
 
     #demotePiece(square: Square): void {
-        const piece = this.board.getPiece(square.name)
+        const piece = this.getPiece(square.name)
         if(!piece){
             throw new Error(`Cannot promote piece. No piece on square: ${square.name}`)
         }
 
         const oldType = piece.type
         piece.demote()
-        this.board.pieceMap.changePieceType(oldType, piece)
+        this.pieceMap.changePieceType(oldType, piece)
     }
 
     #makeCastlingMove(move: Move): void
     {
         // @ts-ignore - it's fine
         const castlesType: CastlingMove = CastlingMove.byKingNewSquare[move.newSquare.name]
-        this.#makeSimpleMove(this.board.getSquare(castlesType.king[0]), this.board.getSquare(castlesType.king[1]))
-        this.#makeSimpleMove(this.board.getSquare(castlesType.rook[0]), this.board.getSquare(castlesType.rook[1]))
+        this.#makeSimpleMove(this.getSquare(castlesType.king[0]), this.getSquare(castlesType.king[1]))
+        this.#makeSimpleMove(this.getSquare(castlesType.rook[0]), this.getSquare(castlesType.rook[1]))
     }
     #unmakeCastlingMove(move: Move): void
     {
         // @ts-ignore - it's fine
         const castlesType: CastlingMove = CastlingMove.byKingNewSquare[move.newSquare.name]
-        this.#makeSimpleMove(this.board.getSquare(castlesType.king[1]), this.board.getSquare(castlesType.king[0]))
-        this.#makeSimpleMove(this.board.getSquare(castlesType.rook[1]), this.board.getSquare(castlesType.rook[0]))
+        this.#makeSimpleMove(this.getSquare(castlesType.king[1]), this.getSquare(castlesType.king[0]))
+        this.#makeSimpleMove(this.getSquare(castlesType.rook[1]), this.getSquare(castlesType.rook[0]))
     }
 
     #makeEnPassantMove(move: Move): void
     {
         // @ts-ignore we need speed
-        const capturedPawn: Piece = this.board.getPiece(move.captured.square)
+        const capturedPawn: Piece = this.getPiece(move.captured.square)
         this.#capturePiece(capturedPawn)
-        this.board.setPiece(capturedPawn.square, null)
+        this.setPiece(capturedPawn.square, null)
         this.#makeSimpleMove(move.oldSquare, move.newSquare)
     }
 
@@ -116,6 +109,6 @@ export class MoveHandler {
         // @ts-ignore we need speed
         const capturedPiece: Piece = move.captured
         this.#makeSimpleMove(move.newSquare, move.oldSquare)
-        this.#restorePiece(capturedPiece, this.board.getSquare(capturedPiece.square))
+        this.#restorePiece(capturedPiece, this.getSquare(capturedPiece.square))
     }
 }

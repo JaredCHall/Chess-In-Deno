@@ -1,4 +1,4 @@
-import {MoveFactory} from "../../src/MoveGen/MoveFactory.ts";
+import {MoveGenerator} from "../../src/MoveGen/MoveGenerator.ts";
 import {FenNumber} from "../../src/FenNumber.ts";
 import {Move} from "../../src/MoveGen/Move.ts";
 import {SquareName} from "../../src/MoveGen/Square.ts";
@@ -6,8 +6,8 @@ import {assertEquals} from "https://deno.land/std@0.219.0/assert/assert_equals.t
 import {assertArrayIncludes} from "https://deno.land/std@0.219.0/assert/assert_array_includes.ts";
 import {assertExists} from "https://deno.land/std@0.219.0/assert/assert_exists.ts";
 
-const getFactory = (fen: string|FenNumber): MoveFactory => {
-    return new MoveFactory(new FenNumber(fen))
+const getFactory = (fen: string|FenNumber): MoveGenerator => {
+    return new MoveGenerator(new FenNumber(fen))
 }
 
 const assertTargetSquaresEqual = (moves: Move[], expected: SquareName[]) => {

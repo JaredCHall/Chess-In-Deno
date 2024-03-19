@@ -20,9 +20,7 @@ export class RayDirections {
     }
 }
 
-export class MoveFactory extends Board{
-
-    readonly handler: MoveHandler
+export class MoveGenerator extends MoveHandler{
 
     readonly config = {
         determineChecks: true,
@@ -30,12 +28,6 @@ export class MoveFactory extends Board{
     }
 
     static readonly moveDirection = {w: -1, b: 1}
-
-    constructor(fenString: FenNumber) {
-
-        super(fenString);
-        this.handler = new MoveHandler(this)
-    }
 
     makeFromCoordinateNotation(userInput: string): Move
     {
@@ -62,7 +54,7 @@ export class MoveFactory extends Board{
             const movingColor = move.moving.color
             const enemyColor = Player.oppositeColor(movingColor)
 
-            this.handler.makeMove(move)
+            this.makeMove(move)
             const moveIsLegal = !this.#isKingChecked(movingColor)
             if(moveIsLegal && this.config.determineChecks){
                 move.isCheck = this.#isKingChecked(enemyColor)
@@ -70,7 +62,7 @@ export class MoveFactory extends Board{
                     move.isMate = !this.hasLegalMoves(enemyColor)
                 }
             }
-            this.handler.unMakeMove(move)
+            this.unMakeMove(move)
 
             return moveIsLegal
         });
@@ -135,7 +127,7 @@ export class MoveFactory extends Board{
 
     getPawnMoves(square: Square, piece: Piece, promoteType: PromotionType|null = null) {
         const moves: Move[] = []
-        const direction = MoveFactory.moveDirection[piece.color]
+        const direction = MoveGenerator.moveDirection[piece.color]
         // handle single and double space forward moves
         const squareAhead = this.squares10x12[square.index10x12 + 10 * direction]
         if(squareAhead && !squareAhead.piece){
@@ -232,7 +224,7 @@ export class MoveFactory extends Board{
                 switch(move.captured.type){
                     case 'p':          {
                         // pawn only threatens from these offsets
-                        return ![-9,-11].includes((move.newSquare.index10x12 - move.oldSquare.index10x12) * MoveFactory.moveDirection[move.captured.color])
+                        return ![-9,-11].includes((move.newSquare.index10x12 - move.oldSquare.index10x12) * MoveGenerator.moveDirection[move.captured.color])
                     }
                     case 'r': case 'n': return true // rook and knight are useless on diagonals
                     case 'b': case 'q': return false // bishop and queen can capture from this direction

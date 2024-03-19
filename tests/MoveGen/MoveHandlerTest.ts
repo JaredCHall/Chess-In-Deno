@@ -8,8 +8,8 @@ import { assert } from "https://deno.land/std@0.219.0/assert/assert.ts";
 
 const newMove = (handler: MoveHandler, oldSquare: SquareName, newSquare: SquareName, moving: Piece, captured: Piece|null, type: MoveType = 'simple', promoteType: PromotionType|null = null): Move => {
     return new Move(
-        handler.board.getSquare(oldSquare),
-        handler.board.getSquare(newSquare),
+        handler.getSquare(oldSquare),
+        handler.getSquare(newSquare),
         moving, captured, type, promoteType
     )
 }
@@ -116,8 +116,7 @@ Deno.test('It castles short and long', () => {
 })
 
 Deno.test('It promotes pawn', () => {
-    const board = new Board('2k5/6P1/8/8/8/8/1p6/2N1K3')
-    const handler = new MoveHandler(board)
+    const handler = new MoveHandler('2k5/6P1/8/8/8/8/1p6/2N1K3')
     const whitePawn = getPiece(handler,'g7')
     const blackPawn = getPiece(handler,'b2')
     const whiteKnight = getPiece(handler,'c1')
@@ -178,29 +177,29 @@ Deno.test('It promotes pawn', () => {
  */
 
 const getHandler = (fen: string): MoveHandler => {
-    const handler = new MoveHandler(new Board(fen))
-    handler.board.render()
+    const handler = new MoveHandler(fen)
+    handler.render()
     return handler
 }
 
 const makeMove = (handler: MoveHandler, move: Move): void => {
     handler.makeMove(move)
-    handler.board.render()
+    handler.render()
 }
 
 const unMakeMove = (handler: MoveHandler, move: Move): void => {
     handler.unMakeMove(move)
-    handler.board.render()
+    handler.render()
 }
 
 const getPiece = (handler: MoveHandler, square: SquareName): Piece => {
-    const piece = handler.board.getPiece(square)
+    const piece = handler.getPiece(square)
     if(!piece) throw new Error(`No piece on square: ${square}`)
     return piece
 }
 
 const assertSerializesTo = (handler: MoveHandler, fenString: string) => {
-    assertEquals(handler.board.serialize(), fenString, 'Fen position string matches')
+    assertEquals(handler.serialize(), fenString, 'Fen position string matches')
 }
 
 const assertPieceOnSquare = (handler: MoveHandler, square: SquareName, piece: Piece): void => {
@@ -218,17 +217,17 @@ const assertPieceCaptured = (handler: MoveHandler, piece: Piece, capturedOn: Squ
 }
 
 const assertInPieceMap = (handler: MoveHandler, piece: Piece): void => {
-    assert(handler.board.pieceMap.pieces[piece.color][piece.type][piece.startSquare] === piece, `Piece(${piece.serialize()}) is in the piece map`)
+    assert(handler.pieceMap.pieces[piece.color][piece.type][piece.startSquare] === piece, `Piece(${piece.serialize()}) is in the piece map`)
 }
 
 const assertNotInPieceMap = (handler: MoveHandler, piece: Piece): void => {
-    assert(handler.board.pieceMap.pieces[piece.color][piece.type][piece.startSquare] === undefined, `Piece(${piece.serialize()}) is not in the piece map`)
+    assert(handler.pieceMap.pieces[piece.color][piece.type][piece.startSquare] === undefined, `Piece(${piece.serialize()}) is not in the piece map`)
 }
 
 const assertInCaptureMap  = (handler: MoveHandler, piece: Piece): void => {
-    assert(handler.board.pieceMap.captures[piece.color][piece.startSquare] === piece, `Piece(${piece.serialize()}) is in the capture map`)
+    assert(handler.pieceMap.captures[piece.color][piece.startSquare] === piece, `Piece(${piece.serialize()}) is in the capture map`)
 }
 
 const assertNotInCaptureMap = (handler: MoveHandler, piece: Piece): void => {
-    assert(handler.board.pieceMap.captures[piece.color][piece.startSquare] === undefined, `Piece(${piece.serialize()}) is not in the capture map`)
+    assert(handler.pieceMap.captures[piece.color][piece.startSquare] === undefined, `Piece(${piece.serialize()}) is not in the capture map`)
 }
