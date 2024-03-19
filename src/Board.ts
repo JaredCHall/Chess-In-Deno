@@ -40,6 +40,7 @@ export class Board
         this.boardState.enPassantTarget = fenNumber.enPassantTarget
         this.boardState.halfMoveClock = fenNumber.halfMoveClock
         this.boardState.ply = fenNumber.ply
+        this.boardState.sideToMove = fenNumber.sideToMove
     }
 
     getPiece(squareName: SquareName): Piece|null {

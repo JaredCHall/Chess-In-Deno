@@ -70,7 +70,7 @@ export class Square {
         this.name = Square.getName(file, rank)
         this.color = Square.lightSquares.includes(this.name) ? 'light' : 'dark'
         this.coordinates = Square.getCoordinates(this.name)
-        this.index10x12 = this.getIndex10x12()
+        this.index10x12 = (Square.ranks.indexOf(this.rank)) * 10 + Square.files.indexOf(this.file) + 21
     }
 
     static sanitizeName(name: string): SquareName {
@@ -118,12 +118,6 @@ export class Square {
         return colDiff <= 1 && rowDiff <= 1
     }
 
-    // is this square advanced or in front of another square from chosen player's perspective
-    isAdvancedOf(square: Square, color: PlayerColor): boolean {
-        return (color === 'w' && this.rank > square.rank)
-            || (color === 'b' && this.rank < square.rank)
-    }
-
     isPawnPromotionSquare(color: PlayerColor): boolean {
         if(color === 'w'){
             return this.rank === 8
@@ -137,10 +131,4 @@ export class Square {
         }
         return this.rank === 7
     }
-
-    getIndex10x12(): number {
-        return (Square.ranks.indexOf(this.rank)) * 10 + Square.files.indexOf(this.file) + 21
-    }
-
-
 }

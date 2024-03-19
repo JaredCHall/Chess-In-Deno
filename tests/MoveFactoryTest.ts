@@ -6,7 +6,7 @@ import {assertEquals} from "https://deno.land/std@0.219.0/assert/assert_equals.t
 import {assertArrayIncludes} from "https://deno.land/std@0.219.0/assert/assert_array_includes.ts";
 import {assertExists} from "https://deno.land/std@0.219.0/assert/assert_exists.ts";
 
-const getFactory = (fen: string|FenNumber) => {
+const getFactory = (fen: string|FenNumber): MoveFactory => {
     return new MoveFactory(new FenNumber(fen))
 }
 
@@ -181,6 +181,7 @@ Deno.test('it finds all en-passant moves', () => {
 Deno.test('it generates all moves in a position', () => {
 
     // all moves for white
+    console.log('all moves for white')
     let fen = new FenNumber('2b1rr2/6kp/1R6/1p6/4n3/2N4P/PPP1B1P1/2K4R w - - 0 24')
     let factory = getFactory(fen)
     let moves = factory.getAllLegalMoves()
@@ -193,6 +194,7 @@ Deno.test('it generates all moves in a position', () => {
     ])
 
     // all moves for black
+    console.log('all moves for black')
     fen = new FenNumber('2b1rr2/6kp/1R6/1p6/4n3/2N4P/PPP1B1P1/2K4R b - - 0 24')
     factory = getFactory(fen)
     moves = factory.getAllLegalMoves()

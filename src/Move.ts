@@ -1,9 +1,33 @@
 import {Square, SquareName} from "./Square.ts";
 import {Piece} from "./Piece.ts";
-import {CastleRight} from "./FenNumber.ts";
-
 
 export type MoveType = 'simple' | 'double-pawn-move' | 'en-passant' | 'castles'
+
+// info on castling moves
+export type CastleRight = 'K' | 'Q' | 'k' | 'q'
+export class CastlingMove {
+    right: CastleRight = 'K'// name of the castling right
+    king:  SquareName[] = [] // king's start/end squares
+    rook:  SquareName[] = [] // rook's start/end squares
+    empty: SquareName[] = [] // squares that must be empty
+    safe:  SquareName[] = [] // squares that must be safe
+
+    static readonly moves: Record<CastleRight, CastlingMove> = {
+        'K': {right:'K',king:['e1','g1'],rook:['h1','f1'],empty:['f1','g1'], safe:['e1','f1','g1']},
+        'Q': {right:'Q',king:['e1','c1'],rook:['a1','d1'],empty:['d1','c1','b1'], safe:['e1','d1','c1']},
+        'k': {right:'k',king:['e8','g8'],rook:['h8','f8'],empty:['f8','g8'], safe:['e8','f8','g8']},
+        'q': {right:'q',king:['e8','c8'],rook:['a8','d8'],empty:['d8','c8','b8'], safe:['e8','d8','c8']}
+    }
+    static readonly byKingNewSquare: Partial<Record<SquareName, CastlingMove>> = {
+        'g1': this.moves['K'], 'c1': this.moves['Q'],
+        'g8': this.moves['k'], 'c8': this.moves['q'],
+    }
+    static readonly byRookStartSquare: Partial<Record<SquareName, CastlingMove>> = {
+        'h1': this.moves['K'], 'a1': this.moves['Q'],
+        'h8': this.moves['k'], 'a8': this.moves['q'],
+    }
+}
+
 
 export class Move
 {
@@ -31,49 +55,4 @@ export class Move
         this.type = type
         this.promoteType = promoteType
     }
-
-    static castlesTypeByTargetSquare(square: SquareName): CastleRight
-    {
-        switch(square){
-            case 'g1': return 'K'
-            case 'c1': return 'Q'
-            case 'g8': return 'k'
-            case 'c8': return 'q'
-            default: throw new Error(`Invalid target square: ${square} for Castling Move.`)
-        }
-    }
-
-    static castleTypeByRookStartSquare(square: SquareName): CastleRight
-    {
-        switch(square){
-            case 'a1': return 'Q'
-            case 'h1': return 'K'
-            case 'a8': return 'q'
-            case 'h8': return 'k'
-            default: throw new Error(`Invalid rook start square: ${square} for Castling Move.`)
-        }
-    }
-
-    serialize(): string
-    {
-        let serialized = this.oldSquare.name + this.newSquare.name
-        if(this.type === 'castles'){
-            switch(Move.castlesTypeByTargetSquare(this.newSquare.name)){
-                case 'K':
-                case 'k':
-                    serialized = 'O-O'
-                    break
-                case 'Q':
-                case 'q':
-                    serialized = 'O-O-O'
-                    break
-            }
-        }
-
-        if(this.promoteType){
-            serialized += '='+this.moving.type.toUpperCase()
-        }
-        return serialized
-    }
-
 }

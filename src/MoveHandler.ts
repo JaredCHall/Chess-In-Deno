@@ -1,13 +1,11 @@
 import {Board} from "./Board.ts";
-import {Move} from "./Move.ts";
+import {CastlingMove, Move} from "./Move.ts";
 import {Piece, PromotionType} from "./Piece.ts";
-import {Square, SquareName} from "./Square.ts";
-import {CastlingMoves} from "./MoveGen/CastlingMoves.ts";
+import {Square} from "./Square.ts";
 
 export class MoveHandler {
 
     readonly board: Board
-
 
     constructor(board: Board) {
         this.board = board
@@ -23,7 +21,6 @@ export class MoveHandler {
         }
 
         if(move.promoteType){
-
             this.#promotePiece(move.newSquare, move.promoteType)
         }
         // save and update the existing board state for use in unMakes
@@ -63,10 +60,8 @@ export class MoveHandler {
     }
 
     #restorePiece(piece: Piece, square: Square): void {
-        const originalPiece = this.board.pieceMap.captures[piece.color][piece.startSquare] ?? null
-        if(!originalPiece){
-            throw new Error(`Cannot restore piece: ${piece.serialize()}. Original piece does not exist in the capture map.`)
-        }
+        // @ts-ignore speed
+        const originalPiece: Piece = this.board.pieceMap.captures[piece.color][piece.startSquare]
         delete this.board.pieceMap.captures[piece.color][piece.startSquare]
         this.board.pieceMap.addPiece(originalPiece)
         square.setPiece(originalPiece)
@@ -92,41 +87,35 @@ export class MoveHandler {
         this.board.pieceMap.changePieceType(oldType, piece)
     }
 
-
-
     #makeCastlingMove(move: Move): void
     {
-        const castlesType = CastlingMoves.getByTargetSquare(move.newSquare.name)
-        this.#makeSimpleMove(this.board.getSquare(castlesType.kingSquares[0]), this.board.getSquare(castlesType.kingSquares[1]))
-        this.#makeSimpleMove(this.board.getSquare(castlesType.rookSquares[0]), this.board.getSquare(castlesType.rookSquares[1]))
+        // @ts-ignore - it's fine
+        const castlesType: CastlingMove = CastlingMove.byKingNewSquare[move.newSquare.name]
+        this.#makeSimpleMove(this.board.getSquare(castlesType.king[0]), this.board.getSquare(castlesType.king[1]))
+        this.#makeSimpleMove(this.board.getSquare(castlesType.rook[0]), this.board.getSquare(castlesType.rook[1]))
     }
     #unmakeCastlingMove(move: Move): void
     {
-        const castlesType = CastlingMoves.getByTargetSquare(move.newSquare.name)
-        this.#makeSimpleMove(this.board.getSquare(castlesType.kingSquares[1]), this.board.getSquare(castlesType.kingSquares[0]))
-        this.#makeSimpleMove(this.board.getSquare(castlesType.rookSquares[1]), this.board.getSquare(castlesType.rookSquares[0]))
+        // @ts-ignore - it's fine
+        const castlesType: CastlingMove = CastlingMove.byKingNewSquare[move.newSquare.name]
+        this.#makeSimpleMove(this.board.getSquare(castlesType.king[1]), this.board.getSquare(castlesType.king[0]))
+        this.#makeSimpleMove(this.board.getSquare(castlesType.rook[1]), this.board.getSquare(castlesType.rook[0]))
     }
 
     #makeEnPassantMove(move: Move): void
     {
-        if(!move.captured){
-            throw new Error('Cannot make EnPassant Move. No captured piece provided')
-        }
-        const capturedPawn = this.board.getPiece(move.captured.square)
-        if(!capturedPawn) throw new Error(`Cannot en-passant. There is no pawn on square: ${move.captured.square}`)
-
+        // @ts-ignore we need speed
+        const capturedPawn: Piece = this.board.getPiece(move.captured.square)
         this.#capturePiece(capturedPawn)
-        this.board.setPiece(move.captured.square, null)
+        this.board.setPiece(capturedPawn.square, null)
         this.#makeSimpleMove(move.oldSquare, move.newSquare)
     }
 
     #unmakeEnPassantMove(move: Move): void
     {
-        if(!move.captured?.square){
-            throw new Error('Cannot make EnPassant Move. No captured piece provided')
-        }
-
+        // @ts-ignore we need speed
+        const capturedPiece: Piece = move.captured
         this.#makeSimpleMove(move.newSquare, move.oldSquare)
-        this.#restorePiece(move.captured, this.board.getSquare(move.captured.square))
+        this.#restorePiece(capturedPiece, this.board.getSquare(capturedPiece.square))
     }
 }

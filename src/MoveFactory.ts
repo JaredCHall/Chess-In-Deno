@@ -1,12 +1,10 @@
 import {Square, SquareName} from "./Square.ts";
 import {Piece, PieceType, PromotionType} from "./Piece.ts";
 import {Board} from "./Board.ts";
-import {Move} from "./Move.ts";
+import {CastlingMove, Move} from "./Move.ts";
 import {FenNumber} from "./FenNumber.ts";
 import {Player, PlayerColor} from "./Player.ts";
 import {MoveHandler} from "./MoveHandler.ts";
-import {CastlesType, CastlingMoves} from "./MoveGen/CastlingMoves.ts";
-
 
 export class RayDirections {
     static readonly cardinal: number[] = [-10, -1, 1, 10]
@@ -125,12 +123,11 @@ export class MoveFactory extends Board{
 
     getKingMoves(square: Square, piece: Piece): Move[] {
         const moves = this.#traceRayVectors(square, piece, RayDirections.pieces.k, 1)
-
-        // evaluate potential castling moves
+        // add castling moves if possible
         this.boardState.getCastleRightsForColor(piece.color).forEach((right) => {
-            const castlesType = CastlingMoves.get(right)
-            if(this.#isCastlesTypeAllowed(castlesType, piece)) {
-                moves.push(new Move(square, this.getSquare(castlesType.kingSquares[1]), piece, null, 'castles'))
+            const castlingMove = CastlingMove.moves[right]
+            if(this.#isCastlesTypeAllowed(castlingMove, piece)) {
+                moves.push(new Move(square, this.getSquare(castlingMove.king[1]), piece, null, 'castles'))
             }
         })
         return moves
@@ -138,7 +135,6 @@ export class MoveFactory extends Board{
 
     getPawnMoves(square: Square, piece: Piece, promoteType: PromotionType|null = null) {
         const moves: Move[] = []
-
         const direction = MoveFactory.moveDirection[piece.color]
         // handle single and double space forward moves
         const squareAhead = this.squares10x12[square.index10x12 + 10 * direction]
@@ -151,14 +147,12 @@ export class MoveFactory extends Board{
                 }
             }
         }
-
-        const captureSquare1 = this.getSquareByIndex(square.index10x12 + 9 * direction)
-        const captureSquare2 = this.getSquareByIndex(square.index10x12 + 11 * direction)
-        const captureSquares = [captureSquare1, captureSquare2]
+        const captureSquares = [
+            this.getSquareByIndex(square.index10x12 + 9 * direction),
+            this.getSquareByIndex(square.index10x12 + 11 * direction)
+        ]
         captureSquares.forEach((newSquare) => {
-            if(!newSquare){
-                return
-            }
+            if(!newSquare){return} // square out-of-bounds
             if(newSquare.piece && newSquare.piece.color !== piece.color){
                 // normal capture
                 moves.push(new Move(square, newSquare, piece, newSquare.piece))
@@ -181,16 +175,16 @@ export class MoveFactory extends Board{
         return moves
     }
 
-    #isCastlesTypeAllowed(castlesType: CastlesType, king: Piece): boolean {
+    #isCastlesTypeAllowed(castlingMove: CastlingMove, king: Piece): boolean {
         // king must be on the expected square
-        if(king.square !== castlesType.kingSquares[0]){return false}
+        if(king.square !== castlingMove.king[0]){return false}
         // expected rook must be on the expected square
-        const rook = this.getPiece(castlesType.rookSquares[0])
+        const rook = this.getPiece(castlingMove.rook[0])
         if(!rook || rook.color !== king.color || rook.type !== 'r'){return false}
         // cannot castle if expected empty squares are occupied
-        if(!castlesType.emptySquares.every((square: SquareName) =>  !this.getPiece(square))){return false}
+        if(!castlingMove.empty.every((square: SquareName) =>  !this.getPiece(square))){return false}
         // can only castle if all expected safe squares are in fact safe
-        return castlesType.safeSquares.every((squareName: SquareName) => !this.#isSquareThreatenedBy(this.squares[squareName], Player.oppositeColor(king.color)))
+        return castlingMove.safe.every((squareName: SquareName) => !this.#isSquareThreatenedBy(this.squares[squareName], Player.oppositeColor(king.color)))
     }
 
     #traceRayVectors(square: Square, piece: Piece, offsets: number[], maxRayLength: number=7): Move[] {
@@ -216,33 +210,35 @@ export class MoveFactory extends Board{
         const movingColor = Player.oppositeColor(enemyColor)
         const dummyPiece = new Piece('k',movingColor)
 
-        if(!this.getKnightMoves(square, dummyPiece).every((move: Move) => move.captured?.type !== 'n')){
-            return true
-        }
+        const hasKnightThreat = !this.getKnightMoves(square, dummyPiece)
+            .every((move: Move) => move.captured?.type !== 'n')
+        if(hasKnightThreat){return true}
 
-        if(!this.getRookMoves(square, dummyPiece).every((move: Move) => {
-            if(!move.captured){return true}
-            switch(move.captured.type){
-                case 'p': case 'b': case 'n': return true // return in order of likely piece for speed
-                case 'r': case 'q':           return false // rook and queen can capture from this direction
-                case 'k':                     return !move.oldSquare.isAdjacentTo(move.newSquare) // king can capture if adjacent
-            }
-        })){
-            return true
-        }
-
-        return !this.getBishopMoves(square, dummyPiece).every((move: Move) => {
-            if(!move.captured){return true}
-            switch(move.captured.type){
-                case 'p':          {
-                    // pawn can only threaten square from very specific offsets
-                    return ![-9,-11].includes((move.newSquare.index10x12 - move.oldSquare.index10x12) * MoveFactory.moveDirection[move.captured.color])
+        const hasLateralThreat = !this.getRookMoves(square, dummyPiece)
+            .every((move: Move) => {
+                if(!move.captured){return true}
+                switch(move.captured.type){
+                    case 'p': case 'b': case 'n': return true // return in order of likely piece for speed
+                    case 'r': case 'q':           return false // rook and queen can capture from this direction
+                    case 'k':                     return !move.oldSquare.isAdjacentTo(move.newSquare) // king can capture if adjacent
                 }
-                case 'r': case 'n': return true // rook and knight are useless on diagonals
-                case 'b': case 'q': return false // bishop and queen can capture from this direction
-                case 'k':           return !move.oldSquare.isAdjacentTo(move.newSquare) // king can capture if adjacent
-            }
-        });
+            })
+        if(hasLateralThreat){return true}
+
+        // hasDiagonalThreat
+        return !this.getBishopMoves(square, dummyPiece)
+            .every((move: Move) => {
+                if(!move.captured){return true}
+                switch(move.captured.type){
+                    case 'p':          {
+                        // pawn only threatens from these offsets
+                        return ![-9,-11].includes((move.newSquare.index10x12 - move.oldSquare.index10x12) * MoveFactory.moveDirection[move.captured.color])
+                    }
+                    case 'r': case 'n': return true // rook and knight are useless on diagonals
+                    case 'b': case 'q': return false // bishop and queen can capture from this direction
+                    case 'k':           return !move.oldSquare.isAdjacentTo(move.newSquare) // king can capture if adjacent
+                }
+            })
     }
 
     #isKingChecked(color: PlayerColor): boolean {

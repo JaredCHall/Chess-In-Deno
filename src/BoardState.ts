@@ -1,7 +1,7 @@
 import {CastleRight} from "./FenNumber.ts";
 import {Square, SquareName} from "./Square.ts";
 import {PlayerColor} from "./Player.ts";
-import { Move } from "./Move.ts";
+import {CastlingMove, Move} from "./Move.ts";
 
 export class BoardState {
 
@@ -9,24 +9,24 @@ export class BoardState {
     enPassantTarget: SquareName|null = null
     halfMoveClock: number = 0
     ply: number = 0
+    sideToMove: PlayerColor = 'w'
 
     update(move: Move): void {
 
         // increment current ply
-        this.ply++;
+        this.ply++
+        this.sideToMove = this.ply % 2 === 0 ? 'w' : 'b'
 
+        const shouldResetHalfMoveClock = move.moving.type === 'p' || move.captured
+        this.halfMoveClock = shouldResetHalfMoveClock ? 0 : this.halfMoveClock + 1
         // handle the half-move clock
-        if(move.moving.type === 'p' || move.captured){
-            this.halfMoveClock = 0
-        }else{
-            this.halfMoveClock++
-        }
 
         // handle en-passant target
         if(move.type !== 'double-pawn-move'){
             this.enPassantTarget = null
         }else{
-            this.enPassantTarget = Square.sanitizeName(move.newSquare.file + (move.newSquare.rank === 4 ? '3' : '6'))
+            // @ts-ignore should always be right
+            this.enPassantTarget = move.newSquare.file + (move.newSquare.rank === 4 ? '3' : '6')
         }
 
         // handle castle right revocations
@@ -37,20 +37,15 @@ export class BoardState {
         }
 
         if(move.moving.type === 'r'){
-            // rook moves
-            const type = Move.castleTypeByRookStartSquare(move.moving.startSquare)
-            if(currentCastleRights.includes(type)){
-                this.revokeCastleRights([type])
+            // @ts-ignore for speed
+            const type: CastlingMove = CastlingMove.byRookStartSquare[move.moving.startSquare]
+            if(currentCastleRights.includes(type.right)){
+                this.revokeCastleRights([type.right])
             }
         }else if(move.moving.type === 'k'){
             // king moves
             this.revokeCastleRights(currentCastleRights)
         }
-    }
-
-    get sideToMove(): PlayerColor
-    {
-        return this.ply % 2 === 0 ? 'w' : 'b'
     }
 
     revokeCastleRights(rights: CastleRight[]): void {
@@ -69,6 +64,7 @@ export class BoardState {
         state.enPassantTarget = this.enPassantTarget
         state.halfMoveClock = this.halfMoveClock
         state.ply = this.ply
+        state.sideToMove = this.sideToMove
         return state
     }
 }
