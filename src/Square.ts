@@ -58,9 +58,9 @@ export class Square {
 
     readonly file: SquareFile
 
-    piece: Piece|null  = null
+    piece: Piece|null  = null // square references piece references square references piece
 
-    readonly coordinates: Record<PlayerColor, SquareCoordinate>
+    readonly coordinates: Record<PlayerColor, SquareCoordinate> // [x,y] coordinates for each orientation
 
     readonly index10x12: number
 
@@ -73,41 +73,42 @@ export class Square {
         this.index10x12 = this.getIndex10x12()
     }
 
+    static sanitizeName(name: string): SquareName {
+        //@ts-ignore its fine
+        if(!Square.squaresOrder.includes(name)){
+            throw new Error(`Square with name '{$name}' does not exist.`)
+        }
+        //@ts-ignore still fine
+        return name
+    }
+
+    static getName(file: SquareFile, rank: SquareRank): SquareName {
+        // @ts-ignore always valid
+        return file + rank.toString()
+    }
+
+    static getCoordinates(squareName: SquareName): Record<PlayerColor, SquareCoordinate> {
+        const index = Square.squaresOrder.indexOf(squareName);
+        const col = index % 8;
+        const row = Math.floor(index / 8)
+        // return coordinates for both orientations
+        return {
+            w: new SquareCoordinate(col, row),
+            b: new SquareCoordinate(col * -1 + 7, row * -1 + 7)
+        }
+    }
+
+    static fromString(name: string): Square {
+        name = Square.sanitizeName(name)
+        // @ts-ignore always valid
+        return new Square(name.charAt(0), parseInt(name.charAt(1)))
+    }
+
     setPiece(piece: Piece|null){
         this.piece = piece
         if(piece){
             piece.square = this.name
         }
-    }
-    
-    static sanitizeName(name: string): SquareName
-    {
-        switch(name){
-            case 'a8': case 'b8': case 'c8': case 'd8': case 'e8': case 'f8': case 'g8': case 'h8':
-            case 'a7': case 'b7': case 'c7': case 'd7': case 'e7': case 'f7': case 'g7': case 'h7':
-            case 'a6': case 'b6': case 'c6': case 'd6': case 'e6': case 'f6': case 'g6': case 'h6':
-            case 'a5': case 'b5': case 'c5': case 'd5': case 'e5': case 'f5': case 'g5': case 'h5':
-            case 'a4': case 'b4': case 'c4': case 'd4': case 'e4': case 'f4': case 'g4': case 'h4':
-            case 'a3': case 'b3': case 'c3': case 'd3': case 'e3': case 'f3': case 'g3': case 'h3':
-            case 'a2': case 'b2': case 'c2': case 'd2': case 'e2': case 'f2': case 'g2': case 'h2':
-            case 'a1': case 'b1': case 'c1': case 'd1': case 'e1': case 'f1': case 'g1': case 'h1':
-                return name
-            default:
-                throw new Error(`Square with name '{$name}' does not exist.`)
-        }
-    }
-
-    static getName(file: SquareFile, rank: SquareRank): SquareName
-    {
-        // @ts-ignore always valid
-        return file + rank.toString()
-    }
-
-    static fromString(name: string): Square
-    {
-        name = Square.sanitizeName(name)
-        // @ts-ignore always valid
-        return new Square(name.charAt(0), parseInt(name.charAt(1)))
     }
 
     isAdjacentTo(square: Square): boolean {
@@ -141,24 +142,5 @@ export class Square {
         return (Square.ranks.indexOf(this.rank)) * 10 + Square.files.indexOf(this.file) + 21
     }
 
-    static getSquareBehind(square: SquareName, color: PlayerColor): SquareName
-    {
-        const rank = parseInt(square.charAt(1)) + (color === 'w' ? -1 : 1)
-        if(rank > 8 || rank <1){throw new Error(`There is no square behind ${this.name} from player(${color}) perspective`)}
 
-        // @ts-ignore always valid
-        return square.charAt(0) + rank.toString()
-    }
-
-    static getCoordinates(squareName: SquareName): Record<PlayerColor, SquareCoordinate> {
-        const index = Square.squaresOrder.indexOf(squareName);
-        const col = index % 8;
-        const row = Math.floor(index / 8)
-
-        // return coordinates for both orientations
-        return {
-            w: new SquareCoordinate(col, row),
-            b: new SquareCoordinate(col * -1 + 7, row * -1 + 7)
-        }
-    }
 }

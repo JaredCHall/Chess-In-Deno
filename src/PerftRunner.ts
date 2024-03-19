@@ -1,6 +1,7 @@
 import { Move } from "./Move.ts";
 import {MoveFactory} from "./MoveFactory.ts";
 import { FenNumber } from "./FenNumber.ts";
+import {format} from "https://deno.land/std@0.220.1/fmt/duration.ts";
 
 
 export class PerftCounter {
@@ -63,6 +64,7 @@ export class PerftRunner {
 
     factory: MoveFactory
     counter: PerftCounter
+    runTime: number = 0// milliseconds
 
     constructor(startFen: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
         this.factory = new MoveFactory(new FenNumber(startFen))
@@ -75,8 +77,9 @@ export class PerftRunner {
             this.counter.nodes++
             return this.counter
         }
-
+        const start = (new Date()).getTime()
         this.perft(depth)
+        this.runTime = new Date().getTime() - start
 
         return this.counter
     }

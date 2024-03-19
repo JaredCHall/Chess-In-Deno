@@ -54,6 +54,10 @@ export class Board
         return this.squares[square]
     }
 
+    getSquareByIndex(index: number): Square|null {
+        return this.squares10x12[index] ?? null
+    }
+
     saveCurrentState(): void
     {
         this.positions[this.boardState.ply] = this.boardState.clone()
@@ -131,13 +135,8 @@ export class Board
 
                 return outVal
             })
-
-
             console.log(pieces.join(''))
         })
-
-
-
     }
 
     #setPiecePositions(fenNumber: FenNumber) {

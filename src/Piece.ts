@@ -8,22 +8,13 @@ export type PromotionType = 'q'|'r'|'b'|'n'
 
 export class Piece
 {
-    static readonly PAWN = 'p'
-    static readonly KNIGHT = 'n'
-    static readonly BISHOP = 'b'
-    static readonly ROOK = 'r'
-    static readonly KING = 'k'
-    static readonly QUEEN = 'q'
-
     readonly color: 'w'|'b'
-
-    type: PieceType
-
-    square: SquareName // name of currently occupied square, last occupied if captured
 
     readonly startSquare: SquareName // name of starting square
 
-    static readonly TYPES = ['p','n','b','r','k','q']
+    type: PieceType // name of current type, because of pawn promotion this can change
+
+    square: SquareName // name of currently occupied square, last occupied if captured
 
     constructor(type: PieceType, color: PlayerColor, startSquare:SquareName = 'a8') {
         this.type = type
@@ -43,32 +34,20 @@ export class Piece
         return new Piece(type, color, Square.sanitizeName(square))
     }
 
-    static sanitizeType(type: string): PieceType
-    {
-        switch(type){
-            case 'p':
-            case 'n':
-            case 'b':
-            case 'r':
-            case 'k':
-            case 'q':
-                return type
-            default:
-                throw new Error(`Invalid piece type: '${type}'.`)
+    static sanitizeType(type: string): PieceType {
+        if(!['p','n','b','r','k','q'].includes(type)) {
+            throw new Error(`Invalid piece type: '${type}'.`)
         }
+        // @ts-ignore this is correct
+        return type
     }
 
-    static sanitizePromoteType(promoteType: string): PromotionType
-    {
-        switch(promoteType){
-            case 'n':
-            case 'b':
-            case 'r':
-            case 'q':
-                return promoteType
-            default:
-                throw new Error(`Invalid promotion type: '${promoteType}'.`)
+    static sanitizePromoteType(promoteType: string): PromotionType {
+        if(!['n','b','r','k',].includes(promoteType)) {
+            throw new Error(`Invalid promotion type: '${promoteType}'.`)
         }
+        // @ts-ignore this is correct
+        return promoteType
     }
 
     promote(type: PieceType)

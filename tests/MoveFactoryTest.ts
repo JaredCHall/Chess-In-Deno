@@ -158,6 +158,8 @@ Deno.test('it forbids moving into and allows moving out of check', () => {
     assertGeneratesMoves('r2q1b1r/1pp1kppp/p3bB2/1B1P4/8/4Q3/PPP2PPP/RN2K2R b KQ - 0 10', 'e7', ['d6','f6'])
     // king calculates checks correctly with other king and pawn nearby
     assertGeneratesMoves('5k2/5P2/4K3/8/8/8/8/8', 'f8', ['g7'])
+    // pawn does not stop king from grabbing the diagonal adjacent squares behind it
+    assertGeneratesMoves('rnbq1bnr/ppp1kPpp/8/8/8/8/PPPP1PPP/RNBQKBNR', 'e7', ['d7','d6','e6','f6','f7'])
 })
 
 Deno.test('it marks checking moves as checks', () => {
