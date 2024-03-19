@@ -1,5 +1,6 @@
 import {Square, SquareName} from "./Square.ts";
 import {Piece} from "./Piece.ts";
+import {PlayerColor} from "../Player.ts";
 
 export type MoveType = 'simple' | 'double-pawn-move' | 'en-passant' | 'castles'
 
@@ -23,8 +24,12 @@ export class CastlingMove {
         'g8': this.moves['k'], 'c8': this.moves['q'],
     }
     static readonly byRookStartSquare: Partial<Record<SquareName, CastlingMove>> = {
-        'h1': this.moves['K'], 'a1': this.moves['Q'],
-        'h8': this.moves['k'], 'a8': this.moves['q'],
+        h1: this.moves['K'], a1: this.moves['Q'],
+        h8: this.moves['k'], a8: this.moves['q'],
+    }
+    static readonly rightsByColor: Record<PlayerColor, CastleRight[]> = {
+        w: ['K','Q'],
+        b: ['k','q'],
     }
 }
 

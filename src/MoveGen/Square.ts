@@ -111,6 +111,10 @@ export class Square {
         }
     }
 
+    setEmpty() {
+        this.piece = null
+    }
+
     isAdjacentTo(square: Square): boolean {
         // orientation is irrelevant
         const colDiff = Math.abs(this.coordinates.w.column - square.coordinates.w.column)

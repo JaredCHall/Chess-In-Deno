@@ -36,7 +36,7 @@ export class Board
         // build squares and set pieces from FenNumber
         this.squares = this.#buildSquareSet()
         this.#setPiecePositions(fenNumber)
-        this.boardState.castleRights = fenNumber.castleRights
+        this.boardState.grantCastleRights(fenNumber.castleRights)
         this.boardState.enPassantTarget = fenNumber.enPassantTarget
         this.boardState.halfMoveClock = fenNumber.halfMoveClock
         this.boardState.ply = fenNumber.ply
@@ -49,6 +49,9 @@ export class Board
 
     setPiece(square: SquareName, piece: Piece|null): void {
         this.squares[square].setPiece(piece)
+    }
+    setEmpty(square: SquareName): void {
+        this.squares[square].setEmpty()
     }
 
     getSquare(square: SquareName): Square {
