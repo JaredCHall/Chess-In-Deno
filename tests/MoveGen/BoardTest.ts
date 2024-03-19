@@ -1,7 +1,7 @@
-import {Board} from "../src/Board.ts";
+import {Board} from "../../src/MoveGen/Board.ts";
 import {assertEquals, assertInstanceOf} from "https://deno.land/std@0.219.0/assert/mod.ts";
-import {Piece} from "../src/Piece.ts";
-import {Square, SquareName} from "../src/Square.ts";
+import {Piece} from "../../src/MoveGen/Piece.ts";
+import {Square, SquareName} from "../../src/MoveGen/Square.ts";
 
 
 Deno.test('It sets board from FEN number', () => {

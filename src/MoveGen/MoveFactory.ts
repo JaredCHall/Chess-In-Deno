@@ -2,8 +2,8 @@ import {Square, SquareName} from "./Square.ts";
 import {Piece, PieceType, PromotionType} from "./Piece.ts";
 import {Board} from "./Board.ts";
 import {CastlingMove, Move} from "./Move.ts";
-import {FenNumber} from "./FenNumber.ts";
-import {Player, PlayerColor} from "./Player.ts";
+import {FenNumber} from "../FenNumber.ts";
+import {Player, PlayerColor} from "../Player.ts";
 import {MoveHandler} from "./MoveHandler.ts";
 
 export class RayDirections {

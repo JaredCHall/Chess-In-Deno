@@ -1,6 +1,6 @@
 import {Piece, PieceType} from "./Piece.ts";
 import {SquareName} from "./Square.ts";
-import {PlayerColor} from "./Player.ts";
+import {PlayerColor} from "../Player.ts";
 
 
 export type PieceStartSquareMap = Partial<Record<SquareName, Piece>>

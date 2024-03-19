@@ -1,9 +1,9 @@
-import {Board} from "../src/Board.ts";
-import {MoveHandler} from "../src/MoveHandler.ts";
-import {Move, MoveType} from "../src/Move.ts";
+import {Board} from "../../src/MoveGen/Board.ts";
+import {MoveHandler} from "../../src/MoveGen/MoveHandler.ts";
+import {Move, MoveType} from "../../src/MoveGen/Move.ts";
 import {assertEquals} from "https://deno.land/std@0.219.0/assert/assert_equals.ts";
-import {Piece, PromotionType} from "../src/Piece.ts";
-import {SquareName} from "../src/Square.ts";
+import {Piece, PromotionType} from "../../src/MoveGen/Piece.ts";
+import {SquareName} from "../../src/MoveGen/Square.ts";
 import { assert } from "https://deno.land/std@0.219.0/assert/assert.ts";
 
 const newMove = (handler: MoveHandler, oldSquare: SquareName, newSquare: SquareName, moving: Piece, captured: Piece|null, type: MoveType = 'simple', promoteType: PromotionType|null = null): Move => {

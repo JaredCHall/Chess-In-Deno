@@ -1,6 +1,6 @@
-import {CastleRight} from "./FenNumber.ts";
+import {CastleRight} from "../FenNumber.ts";
 import {Square, SquareName} from "./Square.ts";
-import {PlayerColor} from "./Player.ts";
+import {PlayerColor} from "../Player.ts";
 import {CastlingMove, Move} from "./Move.ts";
 
 export class BoardState {

@@ -1,4 +1,4 @@
-import {Player, PlayerColor} from "./Player.ts";
+import {Player, PlayerColor} from "../Player.ts";
 import {Square, SquareName} from "./Square.ts";
 
 

@@ -1,9 +1,9 @@
-import {Board} from "./Board.ts";
-import {MoveFactory} from "./MoveFactory.ts";
-import { SquareName } from "./Square.ts";
-import {Move} from "./Move.ts";
+import {Board} from "./MoveGen/Board.ts";
+import {MoveFactory} from "./MoveGen/MoveFactory.ts";
+import { SquareName } from "./MoveGen/Square.ts";
+import {Move} from "./MoveGen/Move.ts";
 import {FenNumber} from "./FenNumber.ts";
-import {MoveHandler} from "./MoveHandler.ts";
+import {MoveHandler} from "./MoveGen/MoveHandler.ts";
 
 export class Game {
 

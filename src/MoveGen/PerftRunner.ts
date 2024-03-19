@@ -1,6 +1,6 @@
 import { Move } from "./Move.ts";
 import {MoveFactory} from "./MoveFactory.ts";
-import { FenNumber } from "./FenNumber.ts";
+import { FenNumber } from "../FenNumber.ts";
 import {format} from "https://deno.land/std@0.220.1/fmt/duration.ts";
 
 

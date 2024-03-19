@@ -1,4 +1,4 @@
-import {Square, SquareName} from "./Square.ts";
+import {Square, SquareName} from "./MoveGen/Square.ts";
 import {Player, PlayerColor} from "./Player.ts";
 
 export type CastleRight = 'k' | 'K' | 'q' | 'Q'

@@ -1,4 +1,4 @@
-import {PerftCounter, PerftRunner} from "../src/PerftRunner.ts";
+import {PerftCounter, PerftRunner} from "../../src/MoveGen/PerftRunner.ts";
 import {assertEquals} from "https://deno.land/std@0.219.0/assert/assert_equals.ts";
 
 
