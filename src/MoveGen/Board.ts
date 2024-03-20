@@ -59,7 +59,7 @@ export class Board
     }
 
     getSquareByIndex(index: number): Square|null {
-        return this.squares10x12[index] ?? null
+        return this.squares10x12[index]
     }
 
     saveCurrentState(): void
@@ -184,6 +184,12 @@ export class Board
 
     #buildSquareSet(): BoardSquares {
         const squares: Partial<BoardSquares> = {}
+
+        // fill 10x12 array with nulls
+        for(let i =0; i < 120; i++){
+            this.squares10x12[i] = null
+        }
+
         Square.squaresOrder.forEach((squareName: SquareName) => {
             const square = Square.fromString(squareName)
             squares[squareName] = square
