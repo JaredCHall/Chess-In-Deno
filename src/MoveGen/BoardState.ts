@@ -34,7 +34,10 @@ export class BoardState {
 
     clone(): BoardState {
         const state = new BoardState()
-        state.castleRights = this.castleRights
+        state.castleRights.K = this.castleRights.K
+        state.castleRights.Q = this.castleRights.Q
+        state.castleRights.k = this.castleRights.k
+        state.castleRights.q = this.castleRights.q
         state.enPassantTarget = this.enPassantTarget
         state.halfMoveClock = this.halfMoveClock
         state.ply = this.ply

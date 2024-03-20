@@ -129,6 +129,13 @@ export class Square {
         return this.rank === 1
     }
 
+    isPawnPrePromotionSquare(color: PlayerColor): boolean {
+        if(color === 'w'){
+            return this.rank === 7
+        }
+        return this.rank === 2
+    }
+
     isPawnStartSquare(color: PlayerColor): boolean {
         if(color === 'w'){
             return this.rank === 2

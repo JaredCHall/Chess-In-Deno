@@ -55,11 +55,9 @@ export class MoveHandler extends Board {
     }
 
     #restorePiece(piece: Piece, square: Square): void {
-        // @ts-ignore speed
-        const originalPiece: Piece = this.pieceMap.captures[piece.color][piece.startSquare]
         delete this.pieceMap.captures[piece.color][piece.startSquare]
-        this.pieceMap.addPiece(originalPiece)
-        square.piece = originalPiece
+        this.pieceMap.addPiece(piece)
+        square.piece = piece
     }
 
     #promotePiece(square: Square, promoteType: PromotionType): void {

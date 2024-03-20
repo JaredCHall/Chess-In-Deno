@@ -37,20 +37,19 @@ export class MoveGenerator extends MoveHandler{
         }
         const oldSquare = Square.sanitizeName(parts[1])
         const newSquare = Square.sanitizeName(parts[3])
-        const promoteType = parts[6] ? Piece.sanitizePromoteType(parts[6]) : null
 
-        const moves = this.getLegalMoves(oldSquare, promoteType).filter((move) => move.newSquare.name === newSquare)
+        const moves = this.getLegalMoves(oldSquare).filter((move) => move.newSquare.name === newSquare)
         if(moves.length !== 1){
             throw new Error(`Illegal move: ${userInput}`)
         }
         return moves[0]
     }
 
-    getLegalMoves(squareName: SquareName, promoteType: PromotionType|null = null): Move[] {
+    getLegalMoves(squareName: SquareName): Move[] {
 
         const square = this.getSquare(squareName)
 
-        return this.getPseudoLegalMoves(square, promoteType).filter((move: Move) => {
+        return this.getPseudoLegalMoves(square).filter((move: Move) => {
             const movingColor = move.moving.color
             const enemyColor = Player.oppositeColor(movingColor)
 
@@ -86,9 +85,9 @@ export class MoveGenerator extends MoveHandler{
         return false
     }
 
-    getPseudoLegalMoves(square: Square, promoteType: PromotionType|null = null): Move[] {
+    getPseudoLegalMoves(square: Square): Move[] {
         switch(square.piece?.type){
-            case 'p': return this.getPawnMoves(square, square.piece, promoteType)
+            case 'p': return this.getPawnMoves(square, square.piece)
             case 'r': return this.getRookMoves(square, square.piece)
             case 'n': return this.getKnightMoves(square, square.piece)
             case 'b': return this.getBishopMoves(square, square.piece)
@@ -125,7 +124,7 @@ export class MoveGenerator extends MoveHandler{
         return moves
     }
 
-    getPawnMoves(square: Square, piece: Piece, promoteType: PromotionType|null = null) {
+    getPawnMoves(square: Square, piece: Piece) {
         const moves: Move[] = []
         const direction = MoveGenerator.moveDirection[piece.color]
         // handle single and double space forward moves
@@ -149,22 +148,21 @@ export class MoveGenerator extends MoveHandler{
                 // normal capture
                 moves.push(new Move(square, newSquare, piece, newSquare.piece))
             }else if(newSquare.name === this.boardState.enPassantTarget) {
-                // en-passant move
-                const captureSquare = this.squares10x12[newSquare.index10x12 - 10 * direction] ?? null
-                if(captureSquare?.piece){
-                    moves.push(new Move(square, newSquare, piece, captureSquare.piece, 'en-passant'))
-                }
+                //@ts-ignore - en-passant target should always be a valid square
+                const captureSquare: Square = this.squares10x12[newSquare.index10x12 - 10 * direction]
+                moves.push(new Move(square, newSquare, piece, captureSquare.piece, 'en-passant'))
             }
         })
-
-        // set promoteType if applicable
-        moves.forEach((move: Move) => {
-            if(move.newSquare.isPawnPromotionSquare(piece.color)){
-                move.promoteType = promoteType ?? 'q'
-            }
+        if(!square.isPawnPrePromotionSquare(piece.color)){
+            return moves
+        }
+        const newMoves: Move[] = []
+        Piece.promotionTypes.forEach((promoteType) => {
+            moves.forEach((move: Move) => {
+                newMoves.push(new Move(move.oldSquare, move.newSquare, move.moving, move.captured, move.type, promoteType))
+            })
         })
-
-        return moves
+        return newMoves
     }
 
     #isCastlesTypeAllowed(castlingMove: CastlingMove, king: Piece): boolean {

@@ -16,6 +16,10 @@ export class Piece
 
     square: SquareName // name of currently occupied square, last occupied if captured
 
+    static readonly promotionTypes: PromotionType[] = ['n','b','r','q']
+
+    static readonly pieceTypes: PieceType[] = ['p','n','b','r','k','q']
+
     constructor(type: PieceType, color: PlayerColor, startSquare:SquareName = 'a8') {
         this.type = type
         this.color = color
@@ -35,7 +39,8 @@ export class Piece
     }
 
     static sanitizeType(type: string): PieceType {
-        if(!['p','n','b','r','k','q'].includes(type)) {
+        // @ts-ignore - this is on purpose
+        if(!Piece.pieceTypes.includes(type)) {
             throw new Error(`Invalid piece type: '${type}'.`)
         }
         // @ts-ignore this is correct
@@ -43,7 +48,8 @@ export class Piece
     }
 
     static sanitizePromoteType(promoteType: string): PromotionType {
-        if(!['n','b','r','k',].includes(promoteType)) {
+        // @ts-ignore - this is on purpose
+        if(!Piece.promotionTypes.includes(promoteType)) {
             throw new Error(`Invalid promotion type: '${promoteType}'.`)
         }
         // @ts-ignore this is correct
@@ -79,12 +85,5 @@ export class Piece
         }
         // @ts-ignore - uppercase versions are always valid
         return this.type.toUpperCase()
-    }
-
-    clone(): Piece
-    {
-        const piece = new Piece(this.type, this.color, this.startSquare)
-        piece.square = this.square
-        return piece
     }
 }

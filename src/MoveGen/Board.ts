@@ -1,8 +1,8 @@
 import {Square, SquareName, SquareRank} from "./Square.ts";
 import {FenNumber} from "../FenNumber.ts";
 import {Piece} from "./Piece.ts";
-import { PieceMap } from "./PieceMap.ts";
-import { BoardState } from "./BoardState.ts";
+import {PieceMap} from "./PieceMap.ts";
+import {BoardState} from "./BoardState.ts";
 import {
     bgBrightBlue,
     bgBrightGreen,
