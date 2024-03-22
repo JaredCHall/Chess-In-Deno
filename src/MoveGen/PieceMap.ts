@@ -18,8 +18,17 @@ export class PieceMap
         b: {},
     }
 
+    kings: Record<PlayerColor, Piece|undefined> = {
+        w: undefined,
+        b: undefined,
+    }
+
     addPiece(piece: Piece): void
     {
+        if(piece.type === 'k'){
+            this.kings[piece.color] = piece
+        }
+
         delete this.captures[piece.color][piece.startSquare]
         this.pieces[piece.color][piece.type][piece.startSquare] = piece
     }
@@ -30,8 +39,9 @@ export class PieceMap
         this.captures[piece.color][piece.startSquare] = piece
     }
 
-    getKing(color: PlayerColor): null|Piece {
-        return Object.values(this.pieces[color].k)[0] ?? null
+    getKing(color: PlayerColor): Piece {
+        // @ts-ignore - too slow
+        return this.kings[color]
     }
 
     changePieceType(oldType: PieceType, piece: Piece)
@@ -51,12 +61,22 @@ export class PieceMap
                 .concat(this.getPieceList(color, 'p'))
         }
 
-        return Object.values(this.pieces[color][type])
+        const pieces: Piece[] = []
+        for(const i in this.pieces[color][type]){
+            // @ts-ignore let's try it
+            pieces.push(this.pieces[color][type][i])
+        }
+        return pieces
     }
 
     getCapturesList(color: PlayerColor): Piece[]
     {
-        return Object.values(this.captures[color])
+        const pieces: Piece[] = []
+        for(const i in this.captures[color]){
+            // @ts-ignore let's try it
+            pieces.push(this.pieces[color][i])
+        }
+        return pieces
     }
 
     flush(): void

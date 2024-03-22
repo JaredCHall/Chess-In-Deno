@@ -117,29 +117,7 @@ export class Square {
 
     isAdjacentTo(square: Square): boolean {
         // orientation is irrelevant
-        const colDiff = Math.abs(this.coordinates.w.column - square.coordinates.w.column)
-        const rowDiff = Math.abs(this.coordinates.w.row - square.coordinates.w.row)
-        return colDiff <= 1 && rowDiff <= 1
-    }
-
-    isPawnPromotionSquare(color: PlayerColor): boolean {
-        if(color === 'w'){
-            return this.rank === 8
-        }
-        return this.rank === 1
-    }
-
-    isPawnPrePromotionSquare(color: PlayerColor): boolean {
-        if(color === 'w'){
-            return this.rank === 7
-        }
-        return this.rank === 2
-    }
-
-    isPawnStartSquare(color: PlayerColor): boolean {
-        if(color === 'w'){
-            return this.rank === 2
-        }
-        return this.rank === 7
+        return Math.abs(this.coordinates.w.column - square.coordinates.w.column) <= 1
+            && Math.abs(this.coordinates.w.row - square.coordinates.w.row) <= 1
     }
 }

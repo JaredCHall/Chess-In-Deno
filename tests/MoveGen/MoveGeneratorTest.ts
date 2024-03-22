@@ -1,6 +1,6 @@
 import {MoveGenerator} from "../../src/MoveGen/MoveGenerator.ts";
 import {FenNumber} from "../../src/FenNumber.ts";
-import {Move} from "../../src/MoveGen/Move.ts";
+import {CastlingMove, CastlingRight, Move} from "../../src/MoveGen/Move.ts";
 import {SquareName} from "../../src/MoveGen/Square.ts";
 import {assertEquals} from "https://deno.land/std@0.219.0/assert/assert_equals.ts";
 import {assertArrayIncludes} from "https://deno.land/std@0.219.0/assert/assert_array_includes.ts";
@@ -121,6 +121,9 @@ Deno.test('it handles blocked moves and captures', () => {
 
 Deno.test('it handles illegal castles', () => {
 
+    // cannot castle when no castling rights
+    assertGeneratesMoves('r3k2r/3ppp2/8/8/8/8/3PPP2/R3K2R b', 'e8', ['d8','f8'])
+    assertGeneratesMoves('r3k2r/3ppp2/8/8/8/8/3PPP2/R3K2R b', 'e1', ['d1','f1'])
     // cannot castle when rooks are MIA
     assertGeneratesMoves('4k3/r2ppp1r/8/8/8/8/R2PPP1R/4K3 b KQkq', 'e8', ['d8','f8'])
     assertGeneratesMoves('4k3/r2ppp1r/8/8/8/8/R2PPP1R/4K3 w KQkq', 'e1', ['d1','f1'])
@@ -139,9 +142,13 @@ Deno.test('it handles illegal castles', () => {
     // cannot castle when squares the king must move through are threatened
     assertGeneratesMoves('r3k2r/3ppp2/4N3/8/8/8/3PPP2/R3K2R b KQkq', 'e8', [])
     assertGeneratesMoves('r3k2r/3ppp2/8/8/8/4n3/3PPP2/R3K2R w KQkq', 'e1', [])
+    // cannot castle long when c file is threatened
+    assertGeneratesMoves('r3k2r/1P1ppp2/8/8/8/8/1p1PPP2/R3K2R b KQkq', 'e8', ['d8','f8','g8'])
+    assertGeneratesMoves('r3k2r/1P1ppp2/8/8/8/8/1p1PPP2/R3K2R w KQkq', 'e1', ['d1','f1','g1'])
     // cannot castle into a check
     assertGeneratesMoves('r3k2r/3ppp1B/Q7/8/8/q7/3PPP1b/R3K2R b KQkq', 'e8', ['d8','f8'])
     assertGeneratesMoves('r3k2r/3ppp1B/Q7/8/8/q7/3PPP1b/R3K2R w KQkq', 'e1', ['d1','f1'])
+
 })
 
 Deno.test('it forbids moving into and allows moving out of check', () => {

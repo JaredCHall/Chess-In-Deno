@@ -1,7 +1,14 @@
+import { CastlingRight } from "./MoveGen/Move.ts";
 import {Square, SquareName} from "./MoveGen/Square.ts";
 import {Player, PlayerColor} from "./Player.ts";
 
-export type CastleRight = 'k' | 'K' | 'q' | 'Q'
+
+const fenCastlingTypeMap = {
+    K: CastlingRight.K,
+    Q: CastlingRight.Q,
+    k: CastlingRight.k,
+    q: CastlingRight.q
+}
 
 /**
  * This is an extended FenNumber, which includes isCheck, isMate and isStalemate fields in addition
@@ -13,7 +20,7 @@ export class FenNumber {
 
     sideToMove: PlayerColor = 'w'
 
-    castleRights: CastleRight[] = []
+    castleRights: number = 0b0000
 
     enPassantTarget: null | SquareName = null
 
@@ -73,26 +80,20 @@ export class FenNumber {
         return (this.fullMoveCounter - 1) * 2 + (this.sideToMove === 'b' ? 1 : 0)
     }
 
-    getCastleRightsForColor(color: PlayerColor): CastleRight[]
-    {
-        const typesForColor = color === 'w' ? ['K','Q'] : ['k','q']
-        return this.castleRights.filter(value => typesForColor.includes(value));
-    }
+    #sanitizeCastleRights(castleRights: string): number {
 
-    revokeCastleRights(rights: CastleRight[]){
-        this.castleRights = this.castleRights.filter((right: CastleRight) => !rights.includes(right))
-    }
-
-    #sanitizeCastleRights(castleRights: string): CastleRight[] {
         return castleRights.split('')
             .map((right) => FenNumber.sanitizeCastleRight(right))
+            .reduce((carry, right) => carry | right, 0)
 
     }
 
-    static sanitizeCastleRight(castleRight: string): CastleRight {
+    static sanitizeCastleRight(castleRight: string): CastlingRight {
         switch(castleRight){
-            case 'k': case 'K': case 'Q': case 'q':
-                return castleRight
+            case 'K': return CastlingRight.K
+            case 'Q': return CastlingRight.Q
+            case 'k': return CastlingRight.k
+            case 'q': return CastlingRight.q
             default:
                 throw new Error(`Invalid CastleRight: ${castleRight}.`)
         }
@@ -100,10 +101,16 @@ export class FenNumber {
 
     serialize(withExtended: boolean = false): string
     {
+        let castlingRightsPart = ''
+        if(this.castleRights | CastlingRight.K){castlingRightsPart += 'K'}
+        if(this.castleRights | CastlingRight.Q){castlingRightsPart += 'Q'}
+        if(this.castleRights | CastlingRight.k){castlingRightsPart += 'k'}
+        if(this.castleRights | CastlingRight.q){castlingRightsPart += 'Q'}
+
         const commonParts = [
             this.piecePlacements,
             this.sideToMove,
-            this.castleRights.length > 0 ? this.castleRights.join('') : '-',
+            castlingRightsPart.length > 0 ? castlingRightsPart : '-',
             this.enPassantTarget ?? '-',
             this.halfMoveClock,
             this.fullMoveCounter

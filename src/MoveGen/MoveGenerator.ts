@@ -1,8 +1,6 @@
 import {Square, SquareName} from "./Square.ts";
-import {Piece, PieceType, PromotionType} from "./Piece.ts";
-import {Board} from "./Board.ts";
+import {Piece, PieceType} from "./Piece.ts";
 import {CastlingMove, Move} from "./Move.ts";
-import {FenNumber} from "../FenNumber.ts";
 import {Player, PlayerColor} from "../Player.ts";
 import {MoveHandler} from "./MoveHandler.ts";
 
@@ -18,6 +16,9 @@ export class RayDirections {
         k: RayDirections.cardinal.concat(RayDirections.diagonal),
         p: []
     }
+    static readonly maxLength: Record<PieceType, number> = {
+        n: 1, r: 7, b: 7, q: 7, p: 1, k: 1
+    }
 }
 
 export class MoveGenerator extends MoveHandler{
@@ -26,8 +27,6 @@ export class MoveGenerator extends MoveHandler{
         determineChecks: true,
         determineMates: true,
     }
-
-    static readonly moveDirection = {w: -1, b: 1}
 
     makeFromCoordinateNotation(userInput: string): Move
     {
@@ -88,9 +87,9 @@ export class MoveGenerator extends MoveHandler{
     getPseudoLegalMoves(square: Square): Move[] {
         switch(square.piece?.type){
             case 'p': return this.getPawnMoves(square, square.piece)
-            case 'r': return this.getRookMoves(square, square.piece)
             case 'n': return this.getKnightMoves(square, square.piece)
             case 'b': return this.getBishopMoves(square, square.piece)
+            case 'r': return this.getRookMoves(square, square.piece)
             case 'q': return this.getQueenMoves(square, square.piece)
             case 'k': return this.getKingMoves(square, square.piece)
         }
@@ -115,10 +114,12 @@ export class MoveGenerator extends MoveHandler{
     getKingMoves(square: Square, piece: Piece): Move[] {
         const moves = this.#traceRayVectors(square, piece, RayDirections.pieces.k, 1)
         // add castling moves if possible
-        this.boardState.getCastleRightsForColor(piece.color).forEach((right) => {
-            const castlingMove = CastlingMove.moves[right]
-            if(this.#isCastlesTypeAllowed(castlingMove, piece)) {
-                moves.push(new Move(square, this.getSquare(castlingMove.king[1]), piece, null, 'castles'))
+        if(this.boardState.castleRights == 0){
+            return moves
+        }
+        CastlingMove.movesByColor[piece.color].forEach((castles: CastlingMove) => {
+            if(this.#isCastlesTypeAllowed(castles, piece)) {
+                moves.push(new Move(square, this.getSquare(castles.king[1]), piece, null, 'castles'))
             }
         })
         return moves
@@ -126,12 +127,12 @@ export class MoveGenerator extends MoveHandler{
 
     getPawnMoves(square: Square, piece: Piece) {
         const moves: Move[] = []
-        const direction = MoveGenerator.moveDirection[piece.color]
+        const direction = piece.direction
         // handle single and double space forward moves
         const squareAhead = this.squares10x12[square.index10x12 + 10 * direction]
         if(squareAhead && !squareAhead.piece){
             moves.push(new Move(square, squareAhead, piece, null))
-            if(square.isPawnStartSquare(piece.color)){
+            if(square.rank === Piece.pawnDoubleMoveOriginRanks[piece.color]){
                 const nextSquareAhead = this.squares10x12[squareAhead.index10x12 + 10 * direction]
                 if(nextSquareAhead && !nextSquareAhead.piece){
                     moves.push(new Move(square, nextSquareAhead, piece, null, 'double-pawn-move'))
@@ -153,7 +154,8 @@ export class MoveGenerator extends MoveHandler{
                 moves.push(new Move(square, newSquare, piece, captureSquare.piece, 'en-passant'))
             }
         })
-        if(!square.isPawnPrePromotionSquare(piece.color)){
+
+        if(square.rank !== Piece.promotionOriginRanks[piece.color]){
             return moves
         }
         const newMoves: Move[] = []
@@ -166,6 +168,8 @@ export class MoveGenerator extends MoveHandler{
     }
 
     #isCastlesTypeAllowed(castlingMove: CastlingMove, king: Piece): boolean {
+        // castling right must exist in board state
+        if((castlingMove.right & this.boardState.castleRights) == 0){return false}
         // king must be on the expected square
         if(king.square !== castlingMove.king[0]){return false}
         // expected rook must be on the expected square
@@ -222,7 +226,7 @@ export class MoveGenerator extends MoveHandler{
                 switch(move.captured.type){
                     case 'p':          {
                         // pawn only threatens from these offsets
-                        return ![-9,-11].includes((move.newSquare.index10x12 - move.oldSquare.index10x12) * MoveGenerator.moveDirection[move.captured.color])
+                        return ![-9,-11].includes((move.newSquare.index10x12 - move.oldSquare.index10x12) * move.captured.direction)
                     }
                     case 'r': case 'n': return true // rook and knight are useless on diagonals
                     case 'b': case 'q': return false // bishop and queen can capture from this direction

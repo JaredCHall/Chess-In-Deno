@@ -1,5 +1,5 @@
 import {Player, PlayerColor} from "../Player.ts";
-import {Square, SquareName} from "./Square.ts";
+import {Square, SquareName, SquareRank} from "./Square.ts";
 
 
 export type PieceType = 'p'|'n'|'b'|'r'|'k'|'q'
@@ -8,6 +8,14 @@ export type PromotionType = 'q'|'r'|'b'|'n'
 
 export class Piece
 {
+    static readonly promotionTypes: PromotionType[] = ['n','b','r','q']
+
+    static readonly pieceTypes: PieceType[] = ['p','n','b','r','k','q']
+
+    static readonly promotionOriginRanks: Record<PlayerColor, SquareRank> = {w:7, b:2}
+
+    static readonly pawnDoubleMoveOriginRanks: Record<PlayerColor, SquareRank> = {w: 2, b:7}
+
     readonly color: 'w'|'b'
 
     readonly startSquare: SquareName // name of starting square
@@ -16,15 +24,14 @@ export class Piece
 
     square: SquareName // name of currently occupied square, last occupied if captured
 
-    static readonly promotionTypes: PromotionType[] = ['n','b','r','q']
-
-    static readonly pieceTypes: PieceType[] = ['p','n','b','r','k','q']
+    readonly direction: -1|1 // for pawns, which either move up (-1) or down (1) the board
 
     constructor(type: PieceType, color: PlayerColor, startSquare:SquareName = 'a8') {
         this.type = type
         this.color = color
         this.startSquare = startSquare
         this.square = startSquare
+        this.direction = color === 'w' ? -1 : 1
     }
 
     static fromString(serialized: string, square: string|null = null): Piece

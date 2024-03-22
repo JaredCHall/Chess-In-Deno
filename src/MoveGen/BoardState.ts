@@ -1,11 +1,11 @@
-import {CastleRight} from "../FenNumber.ts";
-import {Square, SquareName} from "./Square.ts";
+import {SquareName} from "./Square.ts";
 import {PlayerColor} from "../Player.ts";
-import {CastlingMove, Move} from "./Move.ts";
+import {CastlingMove, CastlingRight, Move} from "./Move.ts";
+
 
 export class BoardState {
 
-    castleRights: Record<CastleRight,boolean> = {K:false, Q: false, k: false, q: false}
+    castleRights: number = 0b0000
     enPassantTarget: SquareName|null = null
     halfMoveClock: number = 0
     ply: number = 0
@@ -22,22 +22,9 @@ export class BoardState {
         this.#updateKingMove(move)
     }
 
-    grantCastleRights(rights: CastleRight[]): void {
-        rights.forEach((right) => {
-            this.castleRights[right] = true
-        })
-    }
-
-    getCastleRightsForColor(color: PlayerColor): CastleRight[] {
-        return CastlingMove.rightsByColor[color].filter((type) => this.castleRights[type]);
-    }
-
     clone(): BoardState {
         const state = new BoardState()
-        state.castleRights.K = this.castleRights.K
-        state.castleRights.Q = this.castleRights.Q
-        state.castleRights.k = this.castleRights.k
-        state.castleRights.q = this.castleRights.q
+        state.castleRights = this.castleRights
         state.enPassantTarget = this.enPassantTarget
         state.halfMoveClock = this.halfMoveClock
         state.ply = this.ply
@@ -64,18 +51,16 @@ export class BoardState {
 
     #updateRookMove(move: Move) {
         this.#updatePieceMove(move)
-        // rook's only revoke a specific square
-        const revokes: CastlingMove|null = CastlingMove.byRookStartSquare[move.moving.startSquare] ?? null
-        if(revokes){
-            this.castleRights[revokes.right] = false
-        }
+
+        // @ts-ignore ok
+        this.castleRights &= ~CastlingMove.rightsByRookStartSquare[move.moving.startSquare]
+
     }
 
     #updateKingMove(move: Move) {
         this.#updatePieceMove(move)
+
         // revoke all castling rights for moving color
-        CastlingMove.rightsByColor[move.moving.color].forEach((right) => {
-            this.castleRights[right] = false
-        })
+        this.castleRights &= ~CastlingMove.rightsByColor[move.moving.color]
     }
 }

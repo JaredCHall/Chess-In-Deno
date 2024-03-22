@@ -1,10 +1,11 @@
 import {Board} from "../../src/MoveGen/Board.ts";
 import {MoveHandler} from "../../src/MoveGen/MoveHandler.ts";
-import {Move, MoveType} from "../../src/MoveGen/Move.ts";
+import {CastlingRight, Move, MoveType} from "../../src/MoveGen/Move.ts";
 import {assertEquals} from "https://deno.land/std@0.219.0/assert/assert_equals.ts";
 import {Piece, PromotionType} from "../../src/MoveGen/Piece.ts";
 import {SquareName} from "../../src/MoveGen/Square.ts";
 import { assert } from "https://deno.land/std@0.219.0/assert/assert.ts";
+import {assertFalse} from "https://deno.land/std@0.219.0/assert/assert_false.ts";
 
 const newMove = (handler: MoveHandler, oldSquare: SquareName, newSquare: SquareName, moving: Piece, captured: Piece|null, type: MoveType = 'simple', promoteType: PromotionType|null = null): Move => {
     return new Move(
@@ -62,7 +63,7 @@ Deno.test('it makes en-passant moves', () => {
 })
 
 Deno.test('It castles short and long', () => {
-    const handler = getHandler('r3k2r/8/8/8/8/8/8/R3K2R')
+    const handler = getHandler('r3k2r/8/8/8/8/8/8/R3K2R w KQkq')
     const whiteKing = getPiece(handler,'e1')
     const rookA1 = getPiece(handler,'a1')
     const rookH1 = getPiece(handler,'h1')
@@ -70,16 +71,19 @@ Deno.test('It castles short and long', () => {
     const rookA8 = getPiece(handler,'a8')
     const rookH8 = getPiece(handler,'h8')
 
+    console.log(handler.boardState.castleRights.toString(2))
     // castles short as white
     let move= newMove(handler, 'e1','g1', whiteKing, rookA1, 'castles')
     makeMove(handler, move)
     assertSerializesTo(handler,'r3k2r/8/8/8/8/8/8/R4RK1')
     assertPieceOnSquare(handler, 'g1', whiteKing)
     assertPieceOnSquare(handler, 'f1', rookH1)
+    assertFalse(handler.boardState.castleRights & (CastlingRight.K | CastlingRight.Q), 'it revokes castles rights for white')
     unMakeMove(handler, move)
     assertSerializesTo(handler, 'r3k2r/8/8/8/8/8/8/R3K2R')
     assertPieceOnSquare(handler, 'e1', whiteKing)
     assertPieceOnSquare(handler, 'h1', rookH1)
+    assert(handler.boardState.castleRights & (CastlingRight.K | CastlingRight.Q), 'it restores castles rights for white')
 
     // castles long as white
     move = newMove(handler, 'e1','c1', whiteKing, rookH1, 'castles')
@@ -87,10 +91,12 @@ Deno.test('It castles short and long', () => {
     assertSerializesTo(handler, 'r3k2r/8/8/8/8/8/8/2KR3R')
     assertPieceOnSquare(handler, 'c1', whiteKing)
     assertPieceOnSquare(handler, 'd1', rookA1)
+    assertFalse(handler.boardState.castleRights & (CastlingRight.K | CastlingRight.Q), 'it revokes castles rights for white')
     unMakeMove(handler, move)
     assertSerializesTo(handler, 'r3k2r/8/8/8/8/8/8/R3K2R')
     assertPieceOnSquare(handler, 'e1', whiteKing)
     assertPieceOnSquare(handler, 'a1', rookA1)
+    assert(handler.boardState.castleRights & (CastlingRight.K | CastlingRight.Q), 'it restores castles rights for white')
 
     // castles short as black
     move = newMove(handler, 'e8','g8', blackKing, rookA1, 'castles')
@@ -98,21 +104,81 @@ Deno.test('It castles short and long', () => {
     assertSerializesTo(handler,'r4rk1/8/8/8/8/8/8/R3K2R')
     assertPieceOnSquare(handler, 'g8', blackKing)
     assertPieceOnSquare(handler, 'f8', rookH8)
+    assertFalse(handler.boardState.castleRights & (CastlingRight.k | CastlingRight.q), 'it revokes castles rights for black')
     unMakeMove(handler, move)
     assertSerializesTo(handler, 'r3k2r/8/8/8/8/8/8/R3K2R')
     assertPieceOnSquare(handler, 'e8', blackKing)
     assertPieceOnSquare(handler, 'h8', rookH8)
+    assert(handler.boardState.castleRights & (CastlingRight.k | CastlingRight.q), 'it restores castles rights for black')
 
     // castles long as black
-    move = newMove(handler, 'e8','c8', whiteKing, rookH1, 'castles')
+    move = newMove(handler, 'e8','c8', blackKing, rookH1, 'castles')
     makeMove(handler, move)
     assertSerializesTo(handler, '2kr3r/8/8/8/8/8/8/R3K2R')
     assertPieceOnSquare(handler, 'c8', blackKing)
     assertPieceOnSquare(handler, 'd8', rookA8)
+    assertFalse(handler.boardState.castleRights & (CastlingRight.k | CastlingRight.q), 'it revokes castles rights for black')
     unMakeMove(handler, move)
     assertSerializesTo(handler, 'r3k2r/8/8/8/8/8/8/R3K2R')
     assertPieceOnSquare(handler, 'e8', blackKing)
     assertPieceOnSquare(handler, 'a8', rookA8)
+    assert(handler.boardState.castleRights & (CastlingRight.k | CastlingRight.q), 'it restores castles rights for black')
+})
+
+Deno.test('it revokes castling rights correctly for white', () => {
+    const handler = getHandler('r3k2r/8/8/8/8/8/8/R3K2R w KQkq -')
+    const king = getPiece(handler,'e1')
+    const rookA = getPiece(handler,'a1')
+    const rookH = getPiece(handler,'h1')
+
+    // h rook moves
+    let move= newMove(handler, 'h1','h2', rookH, null)
+    makeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1110, 'it revokes short castles if h rook moves')
+    let move2 = newMove(handler, 'h2','h3', rookH, null)
+    makeMove(handler, move2)
+    assertEquals(handler.boardState.castleRights, 0b1110, 'it does not incorrectly restore castles after h rook moves')
+    unMakeMove(handler, move2)
+    unMakeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1111, 'it restores short castles if h rook moves')
+    // a rook moves
+    move= newMove(handler, 'a1','a2', rookA, null)
+    makeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1101, 'it revokes long castles if a rook moves')
+    unMakeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1111, 'it restores short castles if a rook moves')
+    // king moves
+    move= newMove(handler, 'e1','e2', king, null)
+    makeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1100, 'it revokes castles if king moves')
+    unMakeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1111, 'it restores castles if king moves')
+})
+
+Deno.test('it revokes castling rights correctly for black', () => {
+    const handler = getHandler('r3k2r/8/8/8/8/8/8/R3K2R b KQkq -')
+    const king: Piece = getPiece(handler,'e8')
+    const rookA = getPiece(handler,'a8')
+    const rookH = getPiece(handler,'h8')
+
+    // h rook moves
+    let move= newMove(handler, 'h8','h7', rookH, null)
+    makeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1011, 'it revokes short castles if h rook moves')
+    unMakeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1111, 'it restores short castles if h rook moves')
+    // a rook moves
+    move= newMove(handler, 'h8','h7', rookA, null)
+    makeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b0111, 'it revokes long castles if a rook moves')
+    unMakeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1111, 'it restores short castles if a rook moves')
+    // king moves
+    move= newMove(handler, 'e8','e7', king, null)
+    makeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b0011, 'it revokes castles if king moves')
+    unMakeMove(handler, move)
+    assertEquals(handler.boardState.castleRights, 0b1111, 'it restores castles if king moves')
 })
 
 Deno.test('It promotes pawn', () => {

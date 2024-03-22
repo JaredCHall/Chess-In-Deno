@@ -36,7 +36,7 @@ export class Board
         // build squares and set pieces from FenNumber
         this.squares = this.#buildSquareSet()
         this.#setPiecePositions(fenNumber)
-        this.boardState.grantCastleRights(fenNumber.castleRights)
+        this.boardState.castleRights = fenNumber.castleRights
         this.boardState.enPassantTarget = fenNumber.enPassantTarget
         this.boardState.halfMoveClock = fenNumber.halfMoveClock
         this.boardState.ply = fenNumber.ply
@@ -62,13 +62,11 @@ export class Board
         return this.squares10x12[index]
     }
 
-    saveCurrentState(): void
-    {
+    saveCurrentState(): void {
         this.positions[this.boardState.ply] = this.boardState.clone()
     }
 
-    restoreLastState(): void
-    {
+    restoreLastState(): void {
         const currentPly = this.boardState.ply
         this.boardState = this.positions[this.boardState.ply - 1]
         delete this.positions[currentPly]
