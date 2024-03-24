@@ -6,6 +6,19 @@ export type PieceType = 'p'|'n'|'b'|'r'|'k'|'q'
 
 export type PromotionType = 'q'|'r'|'b'|'n'
 
+export enum PieceCode {
+    // first bit says if piece is white or black, all other bits represent piece types
+    white   = 0b00000001,
+    pawn    = 0b00000010, // 1 << 1, // second bit says if it is white or black
+    bpawn   = 0b00000100, // a pawn that moves toward the 1st rank (ex. 00000110 - a black pawn)
+    knight  = 0b00001000,
+    bishop  = 0b00010000,
+    rook    = 0b00100000,
+    queen   = 0b01000000,
+    king    = 0b10000000
+}
+
+
 export class Piece
 {
     static readonly promotionTypes: PromotionType[] = ['n','b','r','q']
@@ -26,12 +39,31 @@ export class Piece
 
     readonly direction: -1|1 // for pawns, which either move up (-1) or down (1) the board
 
+    readonly pieceCode: number
+
     constructor(type: PieceType, color: PlayerColor, startSquare:SquareName = 'a8') {
         this.type = type
         this.color = color
         this.startSquare = startSquare
         this.square = startSquare
         this.direction = color === 'w' ? -1 : 1
+        this.pieceCode = this.getPieceCode()
+    }
+
+    getPieceCode(): number
+    {
+        if(this.type === 'p'){
+            return this.color === 'w' ? PieceCode.pawn | PieceCode.white : PieceCode.pawn | PieceCode.bpawn
+        }
+
+        const isWhite = this.color === 'w' ? 1 : 0
+        switch(this.type){
+            case 'n': return PieceCode.knight | isWhite
+            case 'b': return PieceCode.bishop | isWhite
+            case 'r': return PieceCode.rook | isWhite
+            case 'q': return PieceCode.queen | isWhite
+            case 'k': return PieceCode.king | isWhite
+        }
     }
 
     static fromString(serialized: string, square: string|null = null): Piece

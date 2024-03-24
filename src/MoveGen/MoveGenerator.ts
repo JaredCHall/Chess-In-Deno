@@ -1,5 +1,5 @@
 import {Square, SquareName} from "./Square.ts";
-import {Piece, PieceType} from "./Piece.ts";
+import {Piece, PieceCode, PieceType} from "./Piece.ts";
 import {CastlingMove, Move} from "./Move.ts";
 import {Player, PlayerColor} from "../Player.ts";
 import {MoveHandler} from "./MoveHandler.ts";
@@ -85,14 +85,16 @@ export class MoveGenerator extends MoveHandler{
     }
 
     getPseudoLegalMoves(square: Square): Move[] {
-        switch(square.piece?.type){
-            case 'p': return this.getPawnMoves(square, square.piece)
-            case 'n': return this.getKnightMoves(square, square.piece)
-            case 'b': return this.getBishopMoves(square, square.piece)
-            case 'r': return this.getRookMoves(square, square.piece)
-            case 'q': return this.getQueenMoves(square, square.piece)
-            case 'k': return this.getKingMoves(square, square.piece)
-        }
+
+        // @ts-ignore - ok
+        const piece: Piece = square.piece
+        if(piece.pieceCode & PieceCode.pawn){return this.getPawnMoves(square, piece)}
+        if(piece.pieceCode & PieceCode.knight){return this.getKnightMoves(square, piece)}
+        if(piece.pieceCode & PieceCode.bishop){return this.getBishopMoves(square, piece)}
+        if(piece.pieceCode & PieceCode.rook){return this.getRookMoves(square, piece)}
+        if(piece.pieceCode & PieceCode.queen){return this.getQueenMoves(square, piece)}
+        if(piece.pieceCode & PieceCode.king){return this.getKingMoves(square, piece)}
+
         return []
     }
 
@@ -191,7 +193,7 @@ export class MoveGenerator extends MoveHandler{
                 if(!newSquare){break}
                 const occupyingPiece = newSquare.piece
                 // occupied by a friendly piece
-                if(occupyingPiece && occupyingPiece.color === piece.color){break}
+                if(occupyingPiece && (piece.pieceCode & 1) == (occupyingPiece.pieceCode & 1)){break}
                 moves.push(new Move(square, newSquare, piece, occupyingPiece))
                 // if there's an enemy piece, the ray is terminated
                 if(occupyingPiece){break}
